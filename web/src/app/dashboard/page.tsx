@@ -19,6 +19,8 @@ export default function DashboardPage() {
   const [state, setState] = useState<"loading" | "ready" | "denied" | "down">(
     "loading",
   );
+  const [profile, setProfile] = useState<{ matricNo?: string | null; department?: string | null; level?: string | null } | null | undefined>(undefined);
+  const [pform, setPform] = useState({ matricNo: "", department: "", level: "" });
 
   useEffect(() => {
     (async () => {
@@ -39,6 +41,12 @@ export default function DashboardPage() {
         }
         setMe(data.user);
         setState("ready");
+        if (data.user.role === "student") {
+          fetch("/api/profile")
+            .then((r) => (r.ok ? r.json() : null))
+            .then((p) => setProfile(p?.profile ?? null))
+            .catch(() => setProfile(null));
+        }
       } catch {
         setState("down");
       }
@@ -133,6 +141,40 @@ export default function DashboardPage() {
             <strong>Lecturer verification pending.</strong> You can browse, but
             lecturer tools unlock after an administrator approves your evidence.
           </p>
+        )}
+
+        {me?.role === "student" && profile === null && (
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              await fetch("/api/profile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(pform),
+              });
+              setProfile({ ...pform });
+            }}
+            className="mt-4 rounded-2xl border border-line p-5"
+          >
+            <h2 className="font-display text-base font-semibold">Complete your student profile</h2>
+            <p className="mt-0.5 text-[13px] text-ink-600">
+              Matric number, department, and level help lecturers recognise you.
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <input value={pform.matricNo} onChange={(e) => setPform({ ...pform, matricNo: e.target.value })}
+                placeholder="Matric no." aria-label="Matric number"
+                className="h-11 rounded-xl border border-line px-4 text-sm" />
+              <input value={pform.department} onChange={(e) => setPform({ ...pform, department: e.target.value })}
+                placeholder="Department" aria-label="Department"
+                className="h-11 rounded-xl border border-line px-4 text-sm" />
+              <input value={pform.level} onChange={(e) => setPform({ ...pform, level: e.target.value })}
+                placeholder="Level" aria-label="Level"
+                className="h-11 rounded-xl border border-line px-4 text-sm" />
+            </div>
+            <button className="mt-3 h-11 rounded-xl bg-edufarm-800 px-6 text-sm font-bold text-white">
+              Save profile
+            </button>
+          </form>
         )}
 
         {/* Activity first (PRD §5.3) */}
