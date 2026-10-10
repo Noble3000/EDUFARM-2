@@ -8,6 +8,10 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true,
     // University-domain allowlist ships in Phase 3 (needs domain decision).
+    sendResetPassword: async ({ user, url }) => {
+      // Dev fallback: log the link. Set RESEND_API_KEY + wire delivery for prod.
+      console.log(`[auth] reset ${user.email}: ${url}`);
+    },
   },
   emailVerification: {
     sendOnSignUp: true,

@@ -10,6 +10,7 @@ const NAV = [
   ["Verification", "/admin/verification"],
   ["Moderation", "/admin/moderation"],
   ["Devotionals", "/admin/devotionals"],
+  ["Settings", "/admin/settings"],
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {

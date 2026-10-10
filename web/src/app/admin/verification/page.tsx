@@ -6,6 +6,7 @@ import { AdminShell } from "../admin-shell";
 type Row = {
   app: { id: string; userId: string; department?: string | null; status: string; note?: string | null; createdAt: string };
   applicant: { name: string; email: string };
+  evidenceUrls: string[];
 };
 
 export default function VerificationQueue() {
@@ -54,13 +55,25 @@ export default function VerificationQueue() {
         ))}
       </div>
       <ul className="mt-4 space-y-3">
-        {shown.map(({ app, applicant }) => (
+        {shown.map(({ app, applicant, evidenceUrls }) => (
           <li key={app.id} className="rounded-2xl border border-line p-4">
             <div className="text-sm font-bold">{applicant.name}</div>
             <div className="text-xs text-ink-600">
               {applicant.email} · {app.department ?? "no department"} ·{" "}
               <span className="tabular">{new Date(app.createdAt).toLocaleString()}</span>
             </div>
+            {evidenceUrls.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {evidenceUrls.map((u, i) => (
+                  <a key={i} href={u} target="_blank" rel="noopener noreferrer"
+                    className="rounded-lg px-3 py-1.5 text-xs font-bold text-edufarm-800 ring-1 ring-line hover:bg-edufarm-050">
+                    View evidence {evidenceUrls.length > 1 ? i + 1 : ""}
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-1 text-xs text-ink-600">Evidence links unavailable (storage keys pending).</p>
+            )}
             {app.note && <p className="mt-1 text-[13px] text-ink-600">Note: {app.note}</p>}
             {app.status === "pending" && (
               <div className="mt-3 flex gap-2">

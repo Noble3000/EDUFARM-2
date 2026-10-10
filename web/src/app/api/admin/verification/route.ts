@@ -13,7 +13,23 @@ export async function GET() {
       .from(lecturerVerifications)
       .innerJoin(user, eq(lecturerVerifications.userId, user.id))
       .orderBy(desc(lecturerVerifications.createdAt));
-    return NextResponse.json({ queue: rows });
+
+    // Best-effort signed evidence links (work once R2 keys are set).
+    const { presignedViewUrl } = await import("@/lib/storage/r2");
+    const queue = await Promise.all(
+      rows.map(async ({ app, applicant }) => {
+        let evidenceUrls: string[] = [];
+        try {
+          evidenceUrls = await Promise.all(
+            (app.evidencePaths ?? []).map((key: string) => presignedViewUrl(key)),
+          );
+        } catch {
+          evidenceUrls = [];
+        }
+        return { app, applicant, evidenceUrls };
+      }),
+    );
+    return NextResponse.json({ queue });
   } catch {
     return NextResponse.json({ queue: [], error: "unavailable" }, { status: 503 });
   }

@@ -9,6 +9,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -61,16 +62,23 @@ export default function LoginPage() {
             <label htmlFor="password" className="text-sm font-semibold">
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 h-11 w-full rounded-xl border border-line px-4 text-sm"
-              placeholder="••••••••"
-            />
+            <div className="relative mt-1">
+              <input
+                id="password"
+                type={showPw ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-11 w-full rounded-xl border border-line px-4 pr-16 text-sm"
+                placeholder="••••••••"
+              />
+              <button type="button" onClick={() => setShowPw((v) => !v)}
+                aria-label={showPw ? "Hide password" : "Show password"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-3 py-1.5 text-xs font-bold text-edufarm-800 hover:bg-edufarm-050">
+                {showPw ? "Hide" : "Show"}
+              </button>
+            </div>
           </div>
           {error && (
             <p role="alert" className="rounded-xl bg-danger-bg px-4 py-3 text-sm font-medium text-danger-tx">
@@ -86,6 +94,11 @@ export default function LoginPage() {
           </button>
         </form>
         <p className="mt-6 text-sm text-ink-600">
+          <Link href="/forgot-password" className="font-semibold text-edufarm-800 hover:underline">
+            Forgot password?
+          </Link>
+        </p>
+        <p className="mt-2 text-sm text-ink-600">
           No account?{" "}
           <Link href="/register" className="font-semibold text-edufarm-800 hover:underline">
             Create one
