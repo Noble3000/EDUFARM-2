@@ -9,6 +9,7 @@ type Overview = {
   announcements: { id: string; body: string; publishedAt: string }[];
   sessions: { id: string; title: string; meetingUrl: string; startsAt: string }[];
   assessments: { id: string; title: string; dueAt?: string | null }[];
+  tests?: { id: string; title: string; dueAt?: string | null }[];
 };
 
 const TABS = ["Materials", "Announcements", "Sessions", "Assessments"] as const;
@@ -183,18 +184,29 @@ export function CourseDetail({ params }: { params: Promise<{ id: string }> }) {
               ))}
             </ul>
           ))}
-        {tab === "Assessments" &&
-          (data.assessments.length === 0 ? (
-            <Empty text="No assignments or tests yet for this course." />
-          ) : (
-            <ul className="space-y-2">
-              {data.assessments.map((a) => (
-                <li key={a.id} className="rounded-xl border border-line p-3 text-sm font-semibold">
-                  {a.title}
-                </li>
-              ))}
-            </ul>
-          ))}
+              {tab === "Assessments" &&
+                (data.assessments.length === 0 && (data.tests ?? []).length === 0 ? (
+                  <Empty text="No assignments or tests yet for this course." />
+                ) : (
+                  <>
+                    <ul className="space-y-2">
+                      {data.assessments.map((a) => (
+                        <li key={a.id} className="rounded-xl border border-line p-3 text-sm font-semibold">
+                          📝 {a.title}
+                        </li>
+                      ))}
+                    </ul>
+                    {(data.tests ?? []).length > 0 && (
+                      <ul className="mt-2 space-y-2">
+                        {data.tests!.map((t) => (
+                          <li key={t.id} className="rounded-xl border border-line p-3 text-sm font-semibold">
+                            ⏱ {t.title}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                ))}
       </div>
     </>
   );

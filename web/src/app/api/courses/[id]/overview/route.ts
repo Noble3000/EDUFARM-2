@@ -7,6 +7,7 @@ import {
   announcements,
   liveSessions,
   assignments,
+  tests,
 } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth-helpers";
 
@@ -22,7 +23,7 @@ export async function GET(
     const course = found[0];
     if (!course) return NextResponse.json({ error: "missing" }, { status: 404 });
 
-    const [mats, anns, sess, assigns] = await Promise.all([
+    const [mats, anns, sess, assigns, tst] = await Promise.all([
       db
         .select()
         .from(materials)
@@ -38,6 +39,7 @@ export async function GET(
         .orderBy(desc(announcements.publishedAt)),
       db.select().from(liveSessions).where(eq(liveSessions.courseId, id)),
       db.select().from(assignments).where(eq(assignments.courseId, id)),
+      db.select().from(tests).where(eq(tests.courseId, id)),
     ]);
     return NextResponse.json({
       course,
@@ -45,6 +47,7 @@ export async function GET(
       announcements: anns,
       sessions: sess,
       assessments: assigns,
+      tests: tst,
     });
   } catch {
     return NextResponse.json({ error: "unavailable" }, { status: 503 });

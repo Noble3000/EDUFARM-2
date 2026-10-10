@@ -262,7 +262,6 @@ export const settings = pgTable("settings", {
   maintenanceMode: boolean("maintenance_mode").notNull().default(false),
   defaultSession: text("default_session"),
 });
-
 export const aiUsage = pgTable("ai_usage", {
   id: text("id").primaryKey(),
   userId: text("user_id")
@@ -280,4 +279,53 @@ export const auditLog = pgTable("audit_log", {
   entity: text("entity").notNull(),
   entityId: text("entity_id").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/* ---------- Online tests (PRD §5.6: simple, no proctoring) ---------- */
+
+export const tests = pgTable("tests", {
+  id: text("id").primaryKey(),
+  courseId: text("course_id")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }),
+  authorId: text("author_id")
+    .notNull()
+    .references(() => user.id),
+  title: text("title").notNull(),
+  instructions: text("instructions"),
+  durationMin: integer("duration_min"),
+  dueAt: timestamp("due_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const testQuestions = pgTable("test_questions", {
+  id: text("id").primaryKey(),
+  testId: text("test_id")
+    .notNull()
+    .references(() => tests.id, { onDelete: "cascade" }),
+  kind: text("kind").notNull().default("mcq"), // mcq | short
+  prompt: text("prompt").notNull(),
+  options: jsonb("options").$type<string[]>().default([]),
+  answerIndex: integer("answer_index"), // mcq correct option (hidden from students)
+  answerText: text("answer_text"), // short-answer guide (hidden from students)
+  marks: integer("marks").notNull().default(1),
+  position: integer("position").notNull().default(0),
+});
+
+export const testAttempts = pgTable("test_attempts", {
+  id: text("id").primaryKey(),
+  testId: text("test_id")
+    .notNull()
+    .references(() => tests.id, { onDelete: "cascade" }),
+  studentId: text("student_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  // answers: { [questionId]: { selected?: number; text?: string } }
+  answers: jsonb("answers").$type<Record<string, { selected?: number; text?: string }>>().notNull().default({}),
+  score: integer("score"),
+  maxScore: integer("max_score"),
+  // submitted → auto-marked mcq; published when lecturer releases (or immediately if all-mcq)
+  status: text("status").notNull().default("submitted"), // submitted | published
+  submittedAt: timestamp("submitted_at").notNull().defaultNow(),
+  publishedAt: timestamp("published_at"),
 });

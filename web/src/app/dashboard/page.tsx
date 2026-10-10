@@ -177,9 +177,11 @@ export default function DashboardPage() {
             ["My Courses", "/courses"],
             ["Live Sessions", "/sessions"],
             ["Assignments", "/assignments"],
+            ["Online Tests", "/tests"],
             ["Discussion", "/discussions"],
             ["Library", "/library"],
             ["AI Help", "/ai"],
+            ["My Results", "/results"],
           ].map(([label, href]) => (
             <Link
               key={href}

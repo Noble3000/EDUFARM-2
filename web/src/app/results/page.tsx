@@ -5,7 +5,9 @@ import Link from "next/link";
 
 type Result = {
   id: string;
+  kind?: string;
   score?: number | null;
+  maxScore?: number | null;
   feedback?: string | null;
   publishedAt?: string | null;
   assignment: string;
@@ -14,6 +16,7 @@ type Result = {
 
 export default function ResultsPage() {
   const [results, setResults] = useState<Result[]>([]);
+  const [testResults, setTestResults] = useState<Result[]>([]);
   const [pending, setPending] = useState(0);
   const [state, setState] = useState<"loading" | "ready" | "down">("loading");
 
@@ -25,6 +28,7 @@ export default function ResultsPage() {
       })
       .then((data) => {
         setResults(data.results ?? []);
+        setTestResults(data.testResults ?? []);
         setPending(data.pending ?? 0);
         setState("ready");
       })
@@ -50,7 +54,7 @@ export default function ResultsPage() {
           </p>
           {state === "loading" && <p className="mt-3 text-sm text-ink-600">Loading…</p>}
           {state === "down" && <p className="mt-3 text-sm text-ink-600">Database not reachable yet.</p>}
-          {state === "ready" && results.length === 0 && (
+          {state === "ready" && results.length === 0 && testResults.length === 0 && (
             <p className="mt-3 text-sm text-ink-600">
               No published results yet. Submitted work shows here once marked
               and published.
@@ -61,7 +65,7 @@ export default function ResultsPage() {
               <li key={r.id} className="rounded-2xl border border-line p-4">
                 <div className="flex items-center gap-3">
                   <div>
-                    <div className="text-sm font-bold">{r.assignment}</div>
+                    <div className="text-sm font-bold">📝 {r.assignment}</div>
                     <div className="text-xs text-ink-600">{r.course}</div>
                   </div>
                   <span className="tabular ml-auto rounded-full bg-success-bg px-3 py-1 text-sm font-bold text-success-tx">
@@ -71,6 +75,19 @@ export default function ResultsPage() {
                 {r.feedback && (
                   <p className="mt-2 rounded-xl bg-appwash p-3 text-sm leading-relaxed">{r.feedback}</p>
                 )}
+              </li>
+            ))}
+            {testResults.map((r) => (
+              <li key={r.id} className="rounded-2xl border border-line p-4">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <div className="text-sm font-bold">⏱ {r.assignment}</div>
+                    <div className="text-xs text-ink-600">{r.course}</div>
+                  </div>
+                  <span className="tabular ml-auto rounded-full bg-success-bg px-3 py-1 text-sm font-bold text-success-tx">
+                    {r.score ?? "—"}{r.maxScore ? ` / ${r.maxScore}` : ""}
+                  </span>
+                </div>
               </li>
             ))}
           </ul>
