@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduFarm — Design System Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green-900:#0B4D2E; --green-800:#0E6B3E; --green-700:#12805A;
+  --green-100:#DDF0E4; --green-050:#EDF7F0;
+  --mint-wash:#CFE6D8; --app-wash:#F2F5F3;
+  --ink-900:#101828; --ink-600:#475467; --ink-400:#98A2B3;
+  --line:#E5E9E4; --card:#fff; --admin-ink:#111827;
+  --success-bg:#E6F4EC; --success-tx:#0E6B3E;
+  --warning-bg:#FEF3C7; --warning-tx:#92400E;
+  --danger-bg:#FEE2E2; --danger-tx:#B42318;
+  --info-bg:#E0E7FF; --info-tx:#3730A3;
+  --neutral-bg:#F2F4F7; --neutral-tx:#344054;
+  --gold-500:#C49A2E; --gold-bg:#FDF6E3; --gold-tx:#7A5B0E;
+  --banner-a-from:#0E6B3E; --banner-a-to:#083D24;
+  --banner-b-from:#12805A; --banner-b-to:#0B4D2E;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--mint-wash);color:var(--ink-900);padding:32px 16px;}
+h1,h2,h3{font-family:'Plus Jakarta Sans','Inter',sans-serif;letter-spacing:-.02em}
+.page{max-width:1180px;margin:0 auto}
+.sheet{background:#fff;border-radius:24px;padding:24px;box-shadow:0 8px 30px rgba(11,77,46,.12)}
+.topbar{background:var(--green-900);color:#fff;border-radius:16px;height:56px;display:flex;align-items:center;padding:0 16px;gap:16px;margin-bottom:20px}
+.topbar .tabs{display:flex;gap:8px}
+.topbar .tab{padding:8px 16px;border-radius:999px;font-size:14px;font-weight:600;color:#D7E9DD}
+.topbar .tab.active{background:#fff;color:var(--green-800)}
+.topbar .spacer{flex:1}
+.btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 18px;border-radius:12px;font-size:14px;font-weight:600;border:0;cursor:pointer}
+.btn-green{background:var(--green-800);color:#fff}
+.btn-dark{background:var(--admin-ink);color:#fff}
+.btn-white{background:#fff;color:var(--green-800)}
+.btn-ghost{background:transparent;color:var(--ink-900);border:1px solid var(--line)}
+.pill{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:600}
+.pill.success{background:var(--success-bg);color:var(--success-tx)}
+.pill.warning{background:var(--warning-bg);color:var(--warning-tx)}
+.pill.danger{background:var(--danger-bg);color:var(--danger-tx)}
+.pill.info{background:var(--info-bg);color:var(--info-tx)}
+.pill.neutral{background:var(--neutral-bg);color:var(--neutral-tx)}
+.pill.gold{background:var(--gold-bg);color:var(--gold-tx)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 1px 2px rgba(16,24,40,.06)}
+.card h2{font-size:18px;margin-bottom:4px}
+.card .sub{font-size:13px;color:var(--ink-600);margin-bottom:12px}
+.banner{background:linear-gradient(135deg,var(--banner-a-from),var(--banner-a-to));color:#fff;border-radius:16px;padding:22px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+.banner.b{background:linear-gradient(135deg,var(--banner-b-from),var(--banner-b-to))}
+.banner h2{font-size:20px}.banner p{font-size:13px;opacity:.9;margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat .label{font-size:12px;color:var(--ink-600);font-weight:500}
+.stat .value{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;margin:6px 0 2px}
+.stat .delta{font-size:12px}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--green-100);color:var(--green-800);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.rtitle{font-size:14px;font-weight:600}.rsub{font-size:12px;color:var(--ink-600)}
+.time{margin-left:auto;flex-shrink:0}
+.iconbtn{width:32px;height:32px;border-radius:10px;background:var(--green-050);display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin:12px 0 20px}
+.swatch{border-radius:12px;padding:14px;color:#fff;font-size:12px;font-weight:600}
+.swatch small{display:block;font-weight:500;opacity:.85}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-400);text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}
+td{padding:12px 8px;border-bottom:1px solid var(--line)}
+.type-scale div{padding:8px 0;border-bottom:1px dashed var(--line)}
+.devotional{background:var(--gold-bg);border-left:4px solid var(--gold-500);border-radius:12px;padding:18px;margin-top:16px}
+.devotional .verse{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--gold-tx)}
+.devotional p{font-size:15px;line-height:1.6;margin-top:8px}
+.layout-demo{display:grid;grid-template-columns:248px 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:900px){.layout-demo{grid-template-columns:1fr}}
+.sidebar{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
+.nav-item{height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;border-radius:12px;font-size:14px;font-weight:500;color:var(--ink-600);margin-bottom:4px}
+.nav-item.active{background:var(--green-800);color:#fff;font-weight:600}
+.section-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-400);margin:20px 0 8px}
+input[type=text]{height:44px;border-radius:999px;border:1px solid var(--line);padding:0 18px;width:100%;font-size:14px;font-family:inherit}
+.note{font-size:13px;color:var(--ink-600);line-height:1.6}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="sheet">
+    <div class="topbar">
+      <strong style="font-family:'Plus Jakarta Sans'">EduFarm</strong>
+      <div class="tabs"><span class="tab active">Dashboard</span><span class="tab">Courses</span><span class="tab">Assignments</span><span class="tab">Help Center</span></div>
+      <div class="spacer"></div>
+      <button class="btn btn-dark" style="height:34px;font-size:13px">New Assignment</button>
+      <button class="btn btn-green" style="height:34px;font-size:13px;background:#22A06B">Upload Resource</button>
+    </div>
+
+    <div class="banner">
+      <div><h2>Welcome back, John! — Option A Deep</h2><p>#0E6B3E → #083D24 · default · 2 stops</p></div>
+      <button class="btn btn-white">▶ Start Learning</button>
+    </div>
+
+    <div class="banner b">
+      <div><h2>Welcome back, John! — Option B Fresh</h2><p>#12805A → #0B4D2E · lighter · 2 stops</p></div>
+      <button class="btn btn-white">▶ Start Learning</button>
+    </div>
+
+    <div class="section-label">Color — locked combination</div>
+    <div class="swatches">
+      <div class="swatch" style="background:#0B4D2E">#0B4D2E<small>green-900 · header</small></div>
+      <div class="swatch" style="background:#0E6B3E">#0E6B3E<small>green-800 · primary</small></div>
+      <div class="swatch" style="background:#DDF0E4;color:#0E6B3E">#DDF0E4<small>green-100 · pills</small></div>
+      <div class="swatch" style="background:#CFE6D8;color:#0B4D2E">#CFE6D8<small>mint-wash · page</small></div>
+      <div class="swatch" style="background:#101828">#101828<small>ink-900 · headings</small></div>
+      <div class="swatch" style="background:#FDF6E3;color:#7A5B0E">#FDF6E3<small>gold-bg · devotional only</small></div>
+    </div>
+
+    <div class="section-label">Typography — Plus Jakarta Sans + Inter</div>
+    <div class="card type-scale" style="margin-bottom:16px">
+      <div style="font-family:'Plus Jakarta Sans';font-size:32px;font-weight:800">Display 32 — Trusted academic ecosystem</div>
+      <div style="font-family:'Plus Jakarta Sans';font-size:24px;font-weight:700">H1 24 — Dashboard</div>
+      <div style="font-family:'Plus Jakarta Sans';font-size:18px;font-weight:600">H2 18 — Timetable, Active Assignments</div>
+      <div style="font-size:14px">Body 14/20 — Be prepared for a small pop-quiz on modules 1–3 on Wednesday.</div>
+      <div style="font-size:12px;color:var(--ink-600)">Small 12 — To: Physiology 102-A · 2h ago · tabular 10:00–12:30</div>
+    </div>
+
+    <div class="stats">
+      <div class="card stat"><div class="label">Enrolled Courses</div><div class="value">8</div><div class="delta" style="color:var(--ink-600)">+2 from last semester</div></div>
+      <div class="card stat"><div class="label">Study Hours</div><div class="value">42h</div><div class="delta" style="color:var(--success-tx)">+5.2% this week</div></div>
+      <div class="card stat"><div class="label">Avg. Grade</div><div class="value">87%</div><div class="delta" style="color:var(--success-tx)">+2.1% from last month</div></div>
+      <div class="card stat"><div class="label">Content Moderated</div><div class="value">456</div><div class="delta" style="color:var(--success-tx)">+7.5% from last month</div></div>
+    </div>
+
+    <div class="layout-demo">
+      <div class="sidebar">
+        <div class="nav-item active">◉ Dashboard</div>
+        <div class="nav-item">▭ My Courses</div>
+        <div class="nav-item">● Live Sessions</div>
+        <div class="nav-item">✎ Assignments</div>
+        <div class="nav-item">💬 Discussion</div>
+        <div class="nav-item">📚 Library</div>
+        <div class="nav-item">✦ AI Assistant</div>
+      </div>
+      <div class="card">
+        <h2>Timetable</h2><div class="sub">Anatomy 102 · now in Theater A10</div>
+        <div class="row"><div class="avatar">A</div><div><div class="rtitle">Anatomy 102 – C</div><div class="rsub">Theater A10 · Dr. Smith</div></div><span class="time pill success">10:00 – 12:30</span><span class="iconbtn">📁</span></div>
+        <div class="row"><div class="avatar">P</div><div><div class="rtitle">Physiology 101 – A</div><div class="rsub">Lab 2 · Dr. Jane</div></div><span class="time pill success">12:30 – 14:00</span><span class="iconbtn">📁</span></div>
+        <div class="row" style="opacity:.6"><div class="avatar">B</div><div><div class="rtitle">Biochemistry 101 Lab</div><div class="rsub">Yesterday · Past</div></div><span class="time pill neutral">Past</span><span class="iconbtn">✓</span></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Active Assignments Progress</h2><div class="sub">4 research projects · Next 14 days</div>
+        <div class="row"><div class="avatar">B</div><div><div class="rtitle">Body Systems Interaction Case Study</div><div class="rsub">Biology 101 · 40 marks</div></div><span class="time pill warning">Due Fri</span></div>
+        <div class="row"><div class="avatar">3D</div><div><div class="rtitle">3D Model of a Human Organ</div><div class="rsub">Anatomy · group</div></div><span class="time pill danger">Tomorrow</span></div>
+      </div>
+      <div class="card">
+        <h2>Users</h2><div class="sub">Admin table language — hairlines + pills</div>
+        <table><tr><th>Name</th><th>Role</th><th>Status</th></tr>
+        <tr><td>John Doe</td><td>Admin</td><td><span class="pill success">Active</span></td></tr>
+        <tr><td>Jane Smith</td><td>Lecturer</td><td><span class="pill success">Active</span></td></tr>
+        <tr><td>Bob Johnson</td><td>Student</td><td><span class="pill neutral">Inactive</span></td></tr></table>
+        <div style="margin-top:12px;display:flex;gap:8px"><span class="pill success">Approved</span><span class="pill warning">Pending</span><span class="pill danger">Flagged</span><span class="pill info">Join</span><span class="pill gold">Devotional</span></div>
+      </div>
+    </div>
+
+    <div class="devotional">
+      <div class="verse">Word of God · John 8:12</div>
+      <p>“I am the light of the world. Whoever follows me will never walk in darkness, but will have the light of life.”</p>
+      <p class="note" style="margin-top:8px">Devotional uses gold accent only — never for grades or CTAs.</p>
+    </div>
+
+    <div class="section-label">Inputs & actions</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+      <button class="btn btn-green">Confirm & Publish</button>
+      <button class="btn btn-dark">Add User</button>
+      <button class="btn btn-ghost">View</button>
+    </div>
+    <input type="text" placeholder="Search courses, materials, discussions…">
+    <p class="note" style="margin-top:16px">Shape: sheet 24 · cards 16 · inputs 12 · pills 999 · rows 32px avatars · motion 150–200ms only. Full spec in <b>docs/DESIGN_SYSTEM.md</b>.</p>
+  </div>
+</div>
+</body>
+</html>

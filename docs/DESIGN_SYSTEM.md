@@ -72,8 +72,9 @@ Inspired by Ref 1 green + Ref 3 neutrals, tuned for academic contrast (AA).
 /* Devotional — isolated */
 --gold-500: #C49A2E; --gold-bg: #FDF6E3; --gold-tx: #7A5B0E;
 
-/* Welcome banner gradient (Ref 3 pattern, green version) */
---banner-from: #0E6B3E; --banner-to: #083D24;
+/* Welcome banner gradients — max 2 stops, 135deg only */
+--banner-a-from: #0E6B3E; --banner-a-to: #083D24;   /* Option A: Deep Academic (default) */
+--banner-b-from: #12805A; --banner-b-to: #0B4D2E;   /* Option B: Fresh Academic (lighter) */
 ```
 
 Dark mode: keep green-800 as surface, cards #0F1F17, text #E6EDE8, washes darken 12%. Light is default; dark must pass same contrast.
