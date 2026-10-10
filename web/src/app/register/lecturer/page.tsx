@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
-type Step = "account" | "evidence" | "done";
+type Step = "account" | "code" | "evidence" | "done";
 
 export default function LecturerRegisterPage() {
   const router = useRouter();
@@ -14,25 +14,86 @@ export default function LecturerRegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [code, setCode] = useState("");
   const [department, setDepartment] = useState("");
   const [files, setFiles] = useState<FileList | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function createAccount(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     setBusy(true);
     try {
-      // Auto sign-in gives us a session for the evidence upload that follows.
       const { error } = await authClient.signUp.email({ name, email, password });
       if (error) {
         setError(error.message ?? "Could not create your account. Try again.");
         return;
       }
+      setStep("code");
+      setInfo(`We sent a 6-digit code to ${email}. Enter it below — you will be logged in immediately, then upload evidence.`);
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    const otp = code.trim();
+    if (otp.length !== 6) {
+      setError("Enter the 6-digit code.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error: verifyError } = await authClient.emailOtp.verifyEmail({
+        email,
+        otp,
+      });
+      if (verifyError) {
+        setError(verifyError.message ?? "Invalid or expired code. Check it and try again, or resend.");
+        return;
+      }
+      // Code valid → log in immediately so evidence upload has a session.
+      const { error: signInError } = await authClient.signIn.email({
+        email,
+        password,
+      });
+      if (signInError) {
+        setError("Verified! Log in, then come back to upload evidence.");
+        router.push("/login");
+        return;
+      }
       setStep("evidence");
     } catch {
       setError("Something went wrong. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onResend() {
+    setError(null);
+    setInfo(null);
+    setBusy(true);
+    try {
+      const { error } = await authClient.emailOtp.sendVerificationOtp({
+        email,
+        type: "email-verification",
+      });
+      if (error) {
+        setError(error.message ?? "Could not resend the code. Wait a minute and try again.");
+        return;
+      }
+      setInfo(`New code sent to ${email}. It expires in 10 minutes.`);
+    } catch {
+      setError("Could not resend the code. Try again in a minute.");
     } finally {
       setBusy(false);
     }
@@ -47,19 +108,16 @@ export default function LecturerRegisterPage() {
     }
     setBusy(true);
     try {
+      // Same-origin uploads through the app server (no bucket CORS needed).
       const keys: string[] = [];
       for (const f of Array.from(files).slice(0, 3)) {
-        const ext = f.name.split(".").pop() ?? "bin";
-        const sign = await fetch("/api/uploads/sign", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ purpose: "evidence", contentType: f.type || "application/octet-stream", size: f.size, ext }),
-        });
-        const signed = await sign.json().catch(() => ({}));
-        if (!sign.ok) throw new Error(signed.error ?? "Storage not configured yet — ask your administrator.");
-        const put = await fetch(signed.url, { method: "PUT", body: f, headers: { "Content-Type": f.type } });
-        if (!put.ok) throw new Error("Upload failed — try again.");
-        keys.push(signed.key);
+        const data = new FormData();
+        data.append("file", f);
+        data.append("purpose", "evidence");
+        const up = await fetch("/api/uploads/direct", { method: "POST", body: data });
+        const uploaded = await up.json().catch(() => ({}));
+        if (!up.ok) throw new Error(uploaded.error ?? "Upload failed — try again.");
+        keys.push(uploaded.key);
       }
       const rec = await fetch("/api/verification/evidence", {
         method: "POST",
@@ -85,13 +143,51 @@ export default function LecturerRegisterPage() {
           <h1 className="mt-4 font-display text-2xl font-bold">Under review</h1>
           <p className="mt-2 text-sm leading-relaxed text-ink-600">
             Evidence received for <strong>{email}</strong>
-            {department ? ` (${department})` : ""}. Verify your email, then an
-            administrator will review before lecturer tools unlock.
+            {department ? ` (${department})` : ""}. Your email is verified, and
+            an administrator will review before lecturer tools unlock.
           </p>
           <button onClick={() => router.push("/login")}
             className="mt-6 h-11 w-full rounded-xl bg-ink-900 text-sm font-bold text-white">
             Go to Log in
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === "code") {
+    return (
+      <div className="min-h-screen p-4 sm:p-8">
+        <div className="mx-auto max-w-md rounded-3xl bg-white p-6 shadow-[0_8px_30px_rgba(11,77,46,0.12)] sm:p-8">
+          <h1 className="font-display text-2xl font-bold">Enter your code</h1>
+          <p className="mt-1 text-sm text-ink-600">
+            6-digit code sent to <strong>{email}</strong>. Valid for 10 minutes.
+            You will be logged in immediately, then upload evidence (step 3).
+          </p>
+          <form onSubmit={verifyCode} className="mt-6 space-y-4">
+            <div>
+              <label htmlFor="code" className="text-sm font-semibold">Verification code</label>
+              <input id="code" required inputMode="numeric" autoComplete="one-time-code"
+                minLength={6} maxLength={6} value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="123456"
+                className="mt-1 h-12 w-full rounded-xl border border-line px-4 text-center text-lg tracking-[0.5em]" />
+            </div>
+            {info && (
+              <p role="status" className="rounded-xl bg-info-bg px-4 py-3 text-sm font-medium text-info-tx">{info}</p>
+            )}
+            {error && (
+              <p role="alert" className="rounded-xl bg-danger-bg px-4 py-3 text-sm font-medium text-danger-tx">{error}</p>
+            )}
+            <button type="submit" disabled={busy}
+              className="h-11 w-full rounded-xl bg-ink-900 text-sm font-bold text-white disabled:opacity-50">
+              {busy ? "Verifying…" : "Verify & continue →"}
+            </button>
+            <button type="button" onClick={onResend} disabled={busy}
+              className="h-11 w-full rounded-xl border border-line text-sm font-bold text-ink-900 disabled:opacity-50">
+              Resend code
+            </button>
+          </form>
         </div>
       </div>
     );
@@ -108,8 +204,8 @@ export default function LecturerRegisterPage() {
         </h1>
         <p className="mt-1 text-sm text-ink-600">
           {step === "account"
-            ? "Step 1 of 2 — your account. Evidence comes next."
-            : "Step 2 of 2 — staff ID, appointment letter, or department approval (PDF/JPG/PNG, max 3 files)."}
+            ? "Step 1 of 3 — your account. A 6-digit code comes next, then evidence."
+            : "Step 3 of 3 — staff ID, appointment letter, or department approval (PDF/JPG/PNG, max 3 files)."}
         </p>
 
         {step === "account" ? (
@@ -151,7 +247,7 @@ export default function LecturerRegisterPage() {
             )}
             <button type="submit" disabled={busy}
               className="h-11 w-full rounded-xl bg-ink-900 text-sm font-bold text-white disabled:opacity-50">
-              {busy ? "Creating…" : "Continue to evidence →"}
+              {busy ? "Creating…" : "Send me a code →"}
             </button>
           </form>
         ) : (

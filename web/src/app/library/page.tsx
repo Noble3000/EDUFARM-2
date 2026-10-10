@@ -59,23 +59,20 @@ export default function LibraryPage() {
     }
     setBusy(true);
     try {
-      const ext = file.name.split(".").pop() ?? "bin";
-      const sign = await fetch("/api/uploads/sign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ purpose: "material", contentType: file.type || "application/octet-stream", size: file.size, ext }),
-      });
-      const signed = await sign.json().catch(() => ({}));
-      if (!sign.ok) {
-        setNotice(signed.error ?? "Upload not available yet (storage keys missing).");
+      // Same-origin upload through the app server (no bucket CORS needed).
+      const data = new FormData();
+      data.append("file", file);
+      data.append("purpose", "material");
+      const up = await fetch("/api/uploads/direct", { method: "POST", body: data });
+      const uploaded = await up.json().catch(() => ({}));
+      if (!up.ok) {
+        setNotice(uploaded.error ?? "Upload failed. Check the file and try again.");
         return;
       }
-      const put = await fetch(signed.url, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      if (!put.ok) throw new Error("put");
       const rec = await fetch("/api/materials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...up, filePath: signed.key }),
+        body: JSON.stringify({ ...up, filePath: uploaded.key }),
       });
       if (!rec.ok) throw new Error("record");
       setNotice("Uploaded as draft — confirm & publish below to earn the badge.");

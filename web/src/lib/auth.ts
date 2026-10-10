@@ -1,6 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { emailOTP } from "better-auth/plugins";
 import { db } from "./db";
+import { sendVerificationCodeEmail } from "./email";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -32,6 +34,26 @@ export const auth = betterAuth({
       status: { type: "string", defaultValue: "active", required: false },
     },
   },
+  plugins: [
+    emailOTP({
+      otpLength: 6,
+      expiresIn: 600, // 10 minutes
+      sendVerificationOnSignUp: true,
+      overrideDefaultEmailVerification: true,
+      async sendVerificationOTP({ email, otp, type }) {
+        // Dev: code is visible in the server terminal so signup works
+        // without an email provider. Prod: delivered by Resend.
+        if (!process.env.RESEND_API_KEY) {
+          console.log(`[auth] OTP for ${email} (${type}): ${otp}`);
+        }
+        if (type === "email-verification") {
+          await sendVerificationCodeEmail(email, otp);
+        } else {
+          console.log(`[auth] OTP for ${email} (${type}): ${otp}`);
+        }
+      },
+    }),
+  ],
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
   },

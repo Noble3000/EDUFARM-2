@@ -224,6 +224,7 @@ export default function DashboardPage() {
             ["Library", "/library"],
             ["AI Help", "/ai"],
             ["My Results", "/results"],
+            ...(me?.role === "admin" ? [["Admin", "/admin"] as [string, string]] : []),
           ].map(([label, href]) => (
             <Link
               key={href}

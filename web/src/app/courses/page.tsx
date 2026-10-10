@@ -17,7 +17,9 @@ export default function CoursesPage() {
   const [state, setState] = useState<"loading" | "ready" | "down">("loading");
   const [form, setForm] = useState({ code: "", title: "", lecturerName: "", unitLoad: "", session: "" });
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
 
   async function load() {
     try {
@@ -43,6 +45,26 @@ export default function CoursesPage() {
       })
       .catch(() => setState("down"));
   }, []);
+
+  async function removeCourse(id: string, label: string) {
+    if (!window.confirm(`Remove ${label} from your courses? You can add it back manually any time.`)) return;
+    setNotice(null);
+    setRemoving(id);
+    try {
+      const res = await fetch(`/api/courses/${id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setNotice(data.error ?? "Could not remove the course. Try again.");
+        return;
+      }
+      setNotice(`Removed ${label}.`);
+      await load();
+    } catch {
+      setNotice("Something went wrong. Please try again.");
+    } finally {
+      setRemoving(null);
+    }
+  }
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -132,6 +154,11 @@ export default function CoursesPage() {
 
           <section className="rounded-2xl border border-line p-5">
             <h2 className="font-display text-xl font-bold">Your courses</h2>
+            {notice && (
+              <p role="status" className="mt-2 rounded-xl bg-info-bg px-4 py-3 text-sm font-medium text-info-tx">
+                {notice}
+              </p>
+            )}
             {state === "loading" && <p className="mt-2 text-sm text-ink-600">Loading…</p>}
             {state === "down" && (
               <p className="mt-2 text-sm text-ink-600">
@@ -145,11 +172,8 @@ export default function CoursesPage() {
             )}
             <ul className="mt-3 space-y-2">
               {list.map((c) => (
-                <li key={c.id}>
-                  <Link
-                    href={`/courses/${c.id}`}
-                    className="block rounded-2xl border border-line p-4 hover:border-edufarm-700 hover:bg-edufarm-050"
-                  >
+                <li key={c.id} className="flex items-center gap-2 rounded-2xl border border-line p-2 hover:border-edufarm-700 hover:bg-edufarm-050">
+                  <Link href={`/courses/${c.id}`} className="flex-1 rounded-xl p-2">
                     <div className="text-sm font-bold">
                       {c.code} — {c.title}
                     </div>
@@ -159,6 +183,11 @@ export default function CoursesPage() {
                         .join(" · ")}
                     </div>
                   </Link>
+                  <button type="button" onClick={() => removeCourse(c.id, `${c.code} — ${c.title}`)}
+                    disabled={removing === c.id} aria-label={`Remove ${c.code} — ${c.title}`}
+                    className="shrink-0 rounded-xl px-3 py-2 text-xs font-bold text-danger-tx hover:bg-danger-bg disabled:opacity-50">
+                    {removing === c.id ? "Removing…" : "Remove"}
+                  </button>
                 </li>
               ))}
             </ul>
