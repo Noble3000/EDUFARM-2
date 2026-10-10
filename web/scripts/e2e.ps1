@@ -155,7 +155,7 @@ Check "public devotional" ($cur.json.devotional.title -eq "E2E Light") $cur.code
 $ai = Api POST "/api/ai/student" $S1 @{ question = "Reply with exactly: E2E OK"; mode = "explain" }
 Check "AI answers" ($ai.ok -and $ai.json.source -eq "general") ($ai.text)
 $up = Api POST "/api/uploads/sign" $S2 @{ purpose = "material"; contentType = "application/pdf"; size = 100; ext = "pdf" }
-Check "R2 missing -> clean 503" ($up.code -eq 503) $up.code
+Check "upload signing live" ($up.ok -and $up.json.url -and $up.json.key) ($up.code + " " + $up.text)
 
 # Cleanup (dependency order; users last via cascade where possible)
 Sql @"
