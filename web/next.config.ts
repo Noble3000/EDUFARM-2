@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  /* Self-host on local device: standalone output for `node server.js` / PM2 / Caddy */
+  output: "standalone",
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

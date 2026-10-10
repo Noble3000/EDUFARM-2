@@ -1,26 +1,88 @@
 @import "tailwindcss";
 
+@theme {
+  /* EduFarm Green — locked, max 2-stop gradients only */
+  --color-edufarm-900: #0b4d2e;
+  --color-edufarm-800: #0e6b3e;
+  --color-edufarm-700: #12805a;
+  --color-edufarm-100: #ddf0e4;
+  --color-edufarm-050: #edf7f0;
+  --color-mint: #cfe6d8;
+  --color-appwash: #f2f5f3;
+
+  /* Ink + neutrals */
+  --color-ink-900: #101828;
+  --color-ink-600: #475467;
+  --color-ink-400: #98a2b3;
+  --color-line: #e5e9e4;
+
+  /* Status */
+  --color-success-bg: #e6f4ec;
+  --color-success-tx: #0e6b3e;
+  --color-warning-bg: #fef3c7;
+  --color-warning-tx: #92400e;
+  --color-danger-bg: #fee2e2;
+  --color-danger-tx: #b42318;
+  --color-info-bg: #e0e7ff;
+  --color-info-tx: #3730a3;
+
+  /* Devotional gold — isolated */
+  --color-gold-500: #c49a2e;
+  --color-gold-bg: #fdf6e3;
+  --color-gold-tx: #7a5b0e;
+
+  --font-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --banner-a-from: #0e6b3e;
+  --banner-a-to: #083d24;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-mint);
+  color: var(--color-ink-900);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* Visible focus for a11y (PRD §9) */
+:focus-visible {
+  outline: 2px solid var(--color-edufarm-700);
+  outline-offset: 2px;
+}
+
+/* Restrained motion only */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.banner-a {
+  background: linear-gradient(
+    135deg,
+    var(--banner-a-from),
+    var(--banner-a-to)
+  );
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
