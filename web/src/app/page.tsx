@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
+import { LiveDevotional } from "./devotional";
 
 const FEATURES = [
   {
@@ -157,22 +158,7 @@ export default function Home() {
         </section>
 
         {/* Devotional — prominent but secondary */}
-        <section className="mt-8" aria-label="Word of God devotional">
-          <div className="rounded-xl border-l-4 border-gold-500 bg-gold-bg p-6">
-            <div className="text-xs font-bold tracking-widest text-gold-tx uppercase">
-              Word of God · Devotional
-            </div>
-            <blockquote className="mt-3 max-w-2xl">
-              <p className="text-lg leading-relaxed font-medium">
-                “I am the light of the world. Whoever follows me will never
-                walk in darkness, but will have the light of life.”
-              </p>
-              <cite className="mt-2 block text-sm text-gold-tx not-italic">
-                John 8:12 · Refreshed daily by our administrators
-              </cite>
-            </blockquote>
-          </div>
-        </section>
+        <LiveDevotional />
 
         {/* Final CTA */}
         <section className="banner-a mt-8 flex flex-col items-start justify-between gap-4 rounded-2xl p-8 text-white sm:flex-row sm:items-center">

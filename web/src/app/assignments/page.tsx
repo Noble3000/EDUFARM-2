@@ -19,8 +19,11 @@ const PILL: Record<string, string> = {
 export default function AssignmentsPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "down">("loading");
+  const [staff, setStaff] = useState(false);
+  const [form, setForm] = useState({ courseId: "", title: "", instructions: "", dueAt: "" });
+  const [notice, setNotice] = useState<string | null>(null);
 
-  useEffect(() => {
+  function load() {
     fetch("/api/assignments")
       .then((res) => {
         if (!res.ok) throw new Error("down");
@@ -31,7 +34,35 @@ export default function AssignmentsPage() {
         setState("ready");
       })
       .catch(() => setState("down"));
+  }
+
+  useEffect(() => {
+    load();
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.user?.role === "lecturer" || d?.user?.role === "admin") setStaff(true);
+      })
+      .catch(() => {});
   }, []);
+
+  async function create(e: React.FormEvent) {
+    e.preventDefault();
+    setNotice(null);
+    const res = await fetch("/api/assignments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setNotice(json.error ?? "Could not create. Try again.");
+      return;
+    }
+    setForm({ courseId: "", title: "", instructions: "", dueAt: "" });
+    setNotice("Created — students in the course see it immediately.");
+    load();
+  }
 
   return (
     <div className="min-h-screen p-4 sm:p-8">
@@ -45,6 +76,32 @@ export default function AssignmentsPage() {
             My Results →
           </Link>
         </header>
+
+        {staff && (
+          <form onSubmit={create} className="mt-4 space-y-3 rounded-2xl border border-line p-5">
+            <h2 className="font-display text-lg font-semibold">New assignment</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value })}
+                required placeholder="Course ID" aria-label="Course ID"
+                className="h-11 rounded-xl border border-line px-4 text-sm" />
+              <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
+                required placeholder="Title" aria-label="Title"
+                className="h-11 rounded-xl border border-line px-4 text-sm" />
+            </div>
+            <textarea value={form.instructions} onChange={(e) => setForm({ ...form, instructions: e.target.value })}
+              required rows={3} placeholder="Instructions, deliverables, submission method…"
+              aria-label="Instructions" className="w-full rounded-xl border border-line px-4 py-3 text-sm" />
+            <input type="datetime-local" value={form.dueAt}
+              onChange={(e) => setForm({ ...form, dueAt: e.target.value })}
+              aria-label="Due date" className="h-11 rounded-xl border border-line px-4 text-sm" />
+            <div>
+              <button className="h-11 rounded-xl bg-ink-900 px-6 text-sm font-bold text-white">
+                Create assignment
+              </button>
+            </div>
+            {notice && <p role="status" className="text-sm font-medium text-edufarm-800">{notice}</p>}
+          </form>
+        )}
 
         <div className="mt-4 rounded-2xl border border-line p-5">
           <h1 className="font-display text-xl font-bold">Requires action</h1>

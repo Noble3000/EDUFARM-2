@@ -12,6 +12,11 @@ export default function LibraryPage() {
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<Row[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "down">("loading");
+  const [staff, setStaff] = useState(false);
+  const [up, setUp] = useState({ courseId: "", title: "", type: "note", session: "", allowDownload: false });
+  const [file, setFile] = useState<File | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function search(query: string) {
     setState("loading");
@@ -37,7 +42,61 @@ export default function LibraryPage() {
         setState("ready");
       })
       .catch(() => setState("down"));
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.user?.role === "lecturer" || d?.user?.role === "admin") setStaff(true);
+      })
+      .catch(() => {});
   }, []);
+
+  async function upload(e: React.FormEvent) {
+    e.preventDefault();
+    setNotice(null);
+    if (!file) {
+      setNotice("Choose a file first.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "bin";
+      const sign = await fetch("/api/uploads/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ purpose: "material", contentType: file.type || "application/octet-stream", size: file.size, ext }),
+      });
+      const signed = await sign.json().catch(() => ({}));
+      if (!sign.ok) {
+        setNotice(signed.error ?? "Upload not available yet (storage keys missing).");
+        return;
+      }
+      const put = await fetch(signed.url, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      if (!put.ok) throw new Error("put");
+      const rec = await fetch("/api/materials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...up, filePath: signed.key }),
+      });
+      if (!rec.ok) throw new Error("record");
+      setNotice("Uploaded as draft — confirm & publish below to earn the badge.");
+      setUp({ courseId: "", title: "", type: "note", session: "", allowDownload: false });
+      setFile(null);
+      search(q);
+    } catch {
+      setNotice("Upload failed. Check the file and try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirm(id: string) {
+    await fetch("/api/materials", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action: "confirm-publish" }),
+    });
+    search(q);
+  }
 
   return (
     <div className="min-h-screen p-4 sm:p-8">
@@ -69,6 +128,47 @@ export default function LibraryPage() {
           </button>
         </form>
 
+        {staff && (
+          <form onSubmit={upload} className="mt-4 space-y-3 rounded-2xl border border-line p-5">
+            <h2 className="font-display text-lg font-semibold">Upload material</h2>
+            <p className="text-[13px] text-ink-600">
+              Saved as draft first. Confirm & publish below — only then does it
+              carry the lecturer-confirmed badge.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input value={up.courseId} onChange={(e) => setUp({ ...up, courseId: e.target.value })}
+                required placeholder="Course ID" aria-label="Course ID"
+                className="h-11 rounded-xl border border-line px-4 text-sm" />
+              <input value={up.title} onChange={(e) => setUp({ ...up, title: e.target.value })}
+                required placeholder="Title" aria-label="Title"
+                className="h-11 rounded-xl border border-line px-4 text-sm" />
+              <select value={up.type} onChange={(e) => setUp({ ...up, type: e.target.value })}
+                aria-label="Type" className="h-11 rounded-xl border border-line px-4 text-sm">
+                <option value="note">Note</option>
+                <option value="past-question">Past question</option>
+                <option value="guide">Study guide</option>
+                <option value="other">Other</option>
+              </select>
+              <input value={up.session} onChange={(e) => setUp({ ...up, session: e.target.value })}
+                placeholder="Session (e.g. 2025/2026)" aria-label="Session"
+                className="h-11 rounded-xl border border-line px-4 text-sm" />
+            </div>
+            <input type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.txt"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              aria-label="File" className="w-full text-sm" />
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={up.allowDownload}
+                onChange={(e) => setUp({ ...up, allowDownload: e.target.checked })} />
+              Allow students to download (otherwise view-only)
+            </label>
+            <button disabled={busy}
+              className="h-11 rounded-xl bg-ink-900 px-6 text-sm font-bold text-white disabled:opacity-50">
+              {busy ? "Uploading…" : "Upload as draft"}
+            </button>
+            {notice && <p role="status" className="text-sm font-medium text-edufarm-800">{notice}</p>}
+          </form>
+        )}
+
         <div className="mt-4 rounded-2xl border border-line p-5">
           <h1 className="font-display text-xl font-bold">Unified Library</h1>
           <p className="mt-1 text-[13px] text-ink-600">
@@ -93,9 +193,17 @@ export default function LibraryPage() {
                     {c.code} · {c.title} · {m.type}
                   </div>
                 </div>
-                <span className="ml-auto rounded-full bg-success-bg px-2.5 py-1 text-xs font-semibold text-success-tx">
-                  {m.status}
+                <span className={`ml-auto rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  m.status === "published" ? "bg-success-bg text-success-tx" : "bg-warning-bg text-warning-tx"
+                }`}>
+                  {m.status === "published" ? "✓ lecturer-confirmed" : m.status}
                 </span>
+                {staff && m.status !== "published" && (
+                  <button onClick={() => confirm(m.id)}
+                    className="rounded-xl bg-edufarm-800 px-3 py-1.5 text-xs font-bold text-white">
+                    Confirm & publish
+                  </button>
+                )}
               </li>
             ))}
           </ul>

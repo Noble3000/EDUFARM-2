@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 type Overview = {
@@ -18,8 +18,11 @@ export function CourseDetail({ params }: { params: Promise<{ id: string }> }) {
   const [data, setData] = useState<Overview | null>(null);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Materials");
   const [state, setState] = useState<"loading" | "ready" | "down" | "missing">("loading");
+  const [staff, setStaff] = useState(false);
+  const [announce, setAnnounce] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     fetch(`/api/courses/${id}/overview`)
       .then((res) => {
         if (res.status === 404) throw new Error("missing");
@@ -32,6 +35,43 @@ export function CourseDetail({ params }: { params: Promise<{ id: string }> }) {
       })
       .catch((e: Error) => setState(e.message === "missing" ? "missing" : "down"));
   }, [id]);
+
+  useEffect(() => {
+    load();
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.user?.role === "lecturer" || d?.user?.role === "admin") setStaff(true);
+      })
+      .catch(() => {});
+  }, [id, load]);
+
+  async function postAnnouncement(e: React.FormEvent) {
+    e.preventDefault();
+    setNotice(null);
+    const res = await fetch("/api/announcements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ courseId: id, body: announce }),
+    });
+    if (!res.ok) {
+      setNotice("Could not publish. Try again.");
+      return;
+    }
+    setAnnounce("");
+    setNotice("Published to your students' dashboards.");
+    load();
+  }
+
+  async function access(materialId: string, as: "view" | "download") {
+    const res = await fetch(`/api/materials?id=${materialId}&as=${as}`);
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setNotice(json.error ?? "Not available.");
+      return;
+    }
+    window.open(json.url, "_blank", "noopener");
+  }
 
   if (state === "loading") return <p className="mt-4 text-sm text-ink-600">Loading course…</p>;
   if (state === "down") return <p className="mt-4 text-sm text-ink-600">Database not reachable yet.</p>;
@@ -71,27 +111,57 @@ export function CourseDetail({ params }: { params: Promise<{ id: string }> }) {
               {data.materials.map((m) => (
                 <li key={m.id} className="flex items-center gap-3 rounded-xl border border-line p-3">
                   <span className="text-sm font-semibold">{m.title}</span>
-                  <span className={`ml-auto rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                     m.status === "published" ? "bg-success-bg text-success-tx" : "bg-warning-bg text-warning-tx"
                   }`}>
-                    {m.status}
+                    {m.status === "published" ? "✓ lecturer-confirmed" : m.status}
+                  </span>
+                  <span className="ml-auto flex gap-2">
+                    <button onClick={() => access(m.id, "view")}
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 ring-line hover:bg-appwash">
+                      View
+                    </button>
+                    {m.allowDownload && (
+                      <button onClick={() => access(m.id, "download")}
+                        className="rounded-lg bg-edufarm-800 px-3 py-1.5 text-xs font-bold text-white">
+                        Download
+                      </button>
+                    )}
                   </span>
                 </li>
               ))}
             </ul>
           ))}
-        {tab === "Announcements" &&
-          (data.announcements.length === 0 ? (
-            <Empty text="No announcements yet for this course." />
-          ) : (
-            <ul className="space-y-3">
-              {data.announcements.map((a) => (
-                <li key={a.id} className="rounded-xl bg-appwash p-4 text-sm leading-relaxed">
-                  {a.body}
-                </li>
-              ))}
-            </ul>
-          ))}
+              {tab === "Announcements" &&
+                (data.announcements.length === 0 && !staff ? (
+                  <Empty text="No announcements yet for this course." />
+                ) : (
+                  <>
+                    {staff && (
+                      <form onSubmit={postAnnouncement} className="mb-4 flex gap-2">
+                        <input value={announce} onChange={(e) => setAnnounce(e.target.value)}
+                          required placeholder="Publish an update to your students…"
+                          aria-label="Announcement text"
+                          className="h-11 flex-1 rounded-xl border border-line px-4 text-sm" />
+                        <button className="h-11 rounded-xl bg-ink-900 px-5 text-sm font-bold text-white">
+                          Publish
+                        </button>
+                      </form>
+                    )}
+                    {notice && <p role="status" className="mb-3 text-sm font-medium text-edufarm-800">{notice}</p>}
+                    {data.announcements.length === 0 ? (
+                      <Empty text="No announcements yet for this course." />
+                    ) : (
+                    <ul className="space-y-3">
+                      {data.announcements.map((a) => (
+                        <li key={a.id} className="rounded-xl bg-appwash p-4 text-sm leading-relaxed">
+                          {a.body}
+                        </li>
+                      ))}
+                    </ul>
+                    )}
+                  </>
+                ))}
         {tab === "Sessions" &&
           (data.sessions.length === 0 ? (
             <Empty text="No live sessions scheduled for this course." />
