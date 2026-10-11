@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local Netlify build output (never lint generated bundles):
+    ".netlify/**",
+    "netlify/database/migrations/**",
   ]),
 ]);
 

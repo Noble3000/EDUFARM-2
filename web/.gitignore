@@ -39,6 +39,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# netlify (local build output — deploy reads netlify.toml + netlify/database/migrations)
+.netlify
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

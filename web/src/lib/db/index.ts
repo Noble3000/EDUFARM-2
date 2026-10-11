@@ -3,10 +3,14 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 // postgres-js is lazy: no connection is opened at import/build time.
-// A syntactically invalid DATABASE_URL (e.g. an unset placeholder) must not
+// A syntactically invalid URL (e.g. an unset placeholder) must not
 // crash module evaluation — real queries fail gracefully at runtime instead.
+// On Netlify the platform injects NETLIFY_DB_URL (managed Postgres, no copy
+// pasting needed); locally we use DATABASE_URL. Never commit either value.
 const connectionString =
-  process.env.DATABASE_URL ?? "postgres://localhost:5432/edufarm_dev";
+  process.env.NETLIFY_DB_URL ??
+  process.env.DATABASE_URL ??
+  "postgres://localhost:5432/edufarm_dev";
 
 function createClient() {
   try {

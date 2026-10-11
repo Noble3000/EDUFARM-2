@@ -77,36 +77,51 @@ powershell -ExecutionPolicy Bypass -File web\scripts\e2e.ps1
 
 ## Deploy to Netlify (free `*.netlify.app` domain + auto-deploy)
 
-Why Netlify fits: Next.js App Router runs there with zero code changes.
-One hard rule: **Netlify cannot reach your PC's Postgres**, so production uses
-a hosted Postgres (Neon free tier). Local dev keeps using local Postgres —
-`DATABASE_URL` (dev, local) vs `DATABASE_URL_PROD` (Neon) already split this.
+Why Netlify fits: Next.js App Router runs there with zero code changes, and
+Netlify ships its **own managed Postgres (Netlify Database, Neon-powered)** —
+no separate Neon account, no connection string to copy. The app reads
+`NETLIFY_DB_URL` on Netlify and `DATABASE_URL` on your laptop, and the deploy
+applies `web/netlify/database/migrations` automatically, so the hosted schema
+never drifts from the code.
 
 Repo is ready: `netlify.toml` (base `web`, build `npm run build`,
-publish `.next`, Node 22). Auto-deploy = every push to `main` rebuilds.
+publish `.next`, Node 22), `@netlify/database` installed (this is what makes
+Netlify provision the database), migrations mirrored via `npm run db:netlify`.
+Auto-deploy = every push to `main` rebuilds + migrates.
+After ANY schema change: `npm run db:generate` → `npm run db:netlify` → commit
+both `web/drizzle` and `web/netlify/database/migrations` → push.
 
-1. **Neon** (neon.tech → sign up → New Project → Postgres 16):
-   copy the **pooled** connection string
-   (`postgres://user:pass@ep-xxx-pooler.../neondb?sslmode=require`).
-   Paste it to your builder → migrations + seed run remotely.
-2. **Netlify** (app.netlify.com → sign up → Add a new site → Import an
+1. **Netlify** (app.netlify.com → sign up → Add a new site → Import an
    existing project → GitHub → `Noble3000/EDUFARM-2`):
    base directory `web`, build command + publish auto-filled from `netlify.toml`.
-3. **Site settings → Environment variables** — set all of these, then
-   **Trigger deploy**:
-   `DATABASE_URL` = Neon pooled string, `BETTER_AUTH_SECRET` (generate:
-   any 48-char random), `BETTER_AUTH_URL` = `https://<your-site>.netlify.app`,
+   The first deploy provisions the database and applies migrations by itself.
+   Check it: site → **Data & Storage → Database** (tables appear after deploy).
+2. **Site settings → Environment variables** — set all of these, then
+   **Trigger deploy** (no `DATABASE_URL` needed — the platform injects it):
+   `BETTER_AUTH_SECRET` (generate: any 48-char random), `BETTER_AUTH_URL` =
+   `https://<your-site>.netlify.app`,
    `AI_API_KEY` / `AI_MODEL=gemini-3.5-flash` /
    `AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai`,
    `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` /
-   `R2_BUCKET=edufarm-prod` (create it) / `R2_ENDPOINT`, `RESEND_API_KEY` +
-   `EMAIL_FROM` (or leave email unset → links log to Function Logs).
-4. First deploy gives you the URL → set it as `BETTER_AUTH_URL` → redeploy
+   `R2_BUCKET=edufarm-prod` (create it) / `R2_ENDPOINT`, `GMAIL_USER` +
+   `GMAIL_APP_PASSWORD` (any-inbox mail, no domain) and/or `RESEND_API_KEY` +
+   `EMAIL_FROM`.
+3. First deploy gives you the URL → set it as `BETTER_AUTH_URL` → redeploy
    once (or set it before if you pre-named the site).
-5. Register on the live site, promote yourself to admin via Neon SQL editor:
-   `UPDATE "user" SET role='admin' WHERE email='you@...';`
+4. Register on the live site, promote yourself to admin. Easiest: Netlify CLI
+   from the laptop (`npm i -g netlify-cli` once, `netlify login`, then):
+   `netlify database connect --query "UPDATE \"user\" SET role='admin' WHERE email='you@...';"`
+   (Only Team Owners/Developers can view credentials — never commit them.)
+5. Signup/login on the live URL → `/admin` opens with your queues.
 
 Free-domain rename anytime: Site settings → Change site name → `edufarm.netlify.app`.
+
+> Plan note: Netlify Database runs on credit-based plans (storage free until
+> Jul 2026). If Netlify ever asks you to add credits/upgrade and you want to
+> stay fully free, use the fallback instead: free Neon project (neon.tech),
+> set its pooled string as `DATABASE_URL` in Netlify env (the app prefers
+> `NETLIFY_DB_URL` but falls back to `DATABASE_URL`), and run
+> `npm run db:migrate` from the laptop against it. Everything else stays same.
 
 ## Verify admin is working
 
