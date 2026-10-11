@@ -21,6 +21,7 @@ export default function DashboardPage() {
   );
   const [profile, setProfile] = useState<{ matricNo?: string | null; department?: string | null; level?: string | null } | null | undefined>(undefined);
   const [pform, setPform] = useState({ matricNo: "", department: "", level: "" });
+  const [feed, setFeed] = useState<{ id: string; body: string; publishedAt: string; lecturerName: string; courseCode: string; courseTitle: string; courseId: string }[] | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -41,6 +42,10 @@ export default function DashboardPage() {
         }
         setMe(data.user);
         setState("ready");
+        fetch("/api/announcements")
+          .then((r) => (r.ok ? r.json() : null))
+          .then((a) => setFeed(a?.announcements ?? []))
+          .catch(() => setFeed([]));
         if (data.user.role === "student") {
           fetch("/api/profile")
             .then((r) => (r.ok ? r.json() : null))
@@ -230,9 +235,26 @@ export default function DashboardPage() {
           </article>
           <article className="rounded-2xl border border-line p-5">
             <h2 className="font-display text-lg font-semibold">Announcements</h2>
-            <p className="mt-1 text-sm text-ink-600">
-              Lecturer announcements from your courses will appear here.
-            </p>
+            {feed === null ? (
+              <p className="mt-1 text-sm text-ink-600">Loading…</p>
+            ) : feed.length === 0 ? (
+              <p className="mt-1 text-sm text-ink-600">
+                Nothing yet — announcements from your courses land here with the lecturer&apos;s name attached.
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-3">
+                {feed.slice(0, 5).map((a) => (
+                  <li key={a.id} className="rounded-xl bg-appwash p-3">
+                    <p className="text-sm leading-relaxed">{a.body}</p>
+                    <p className="mt-1.5 text-xs text-ink-600">
+                      <span className="font-bold">{a.lecturerName}</span>
+                      {" · "}{a.courseCode} · {a.courseTitle}
+                      {" · "}{new Date(a.publishedAt).toLocaleDateString()}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </article>
         </section>
 

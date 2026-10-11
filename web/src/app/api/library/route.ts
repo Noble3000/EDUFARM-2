@@ -13,10 +13,16 @@ export async function GET(req: Request) {
     const courseId = url.searchParams.get("course")?.trim() ?? "";
     const type = url.searchParams.get("type")?.trim() ?? "";
     const sessionName = url.searchParams.get("session")?.trim() ?? "";
+    // ?mine=1 — lecturer's own stock: everything they uploaded (drafts +
+    // published), so nothing they saved is ever out of reach.
+    const mine = url.searchParams.get("mine") === "1";
 
     const filters = [];
     // Students see published only; lecturers/admins see all (PRD trust rule).
     if (user.role === "student") filters.push(eq(materials.status, "published"));
+    if (mine && (user.role === "lecturer" || user.role === "admin")) {
+      filters.push(eq(materials.uploaderId, user.id));
+    }
     if (courseId) filters.push(eq(materials.courseId, courseId));
     if (type) filters.push(eq(materials.type, type));
     if (sessionName) filters.push(eq(materials.session, sessionName));

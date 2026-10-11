@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, ne, desc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { devotionals } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/admin-guard";
@@ -50,9 +50,15 @@ export async function PATCH(req: Request) {
     if (!id) return NextResponse.json({ error: "id is required." }, { status: 400 });
 
     if (action === "publish") {
+      // One live devotional at a time: retire any other published ones first.
+      // History is retained — retired rows stay in the table as "hidden".
       await db
         .update(devotionals)
-        .set({ status: "published", publishAt: new Date(), updatedAt: new Date() })
+        .set({ status: "hidden", showOnLanding: false, updatedAt: new Date() })
+        .where(and(eq(devotionals.status, "published"), ne(devotionals.id, id)));
+      await db
+        .update(devotionals)
+        .set({ status: "published", showOnLanding: true, publishAt: new Date(), updatedAt: new Date() })
         .where(eq(devotionals.id, id));
     } else if (action === "unpublish") {
       await db

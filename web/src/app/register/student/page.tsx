@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { signupErrorMessage } from "@/lib/auth-errors";
 
 type Step = "account" | "code";
 
@@ -16,12 +17,14 @@ export default function StudentRegisterPage() {
   const [showPw, setShowPw] = useState(false);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [emailTaken, setEmailTaken] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setEmailTaken(false);
     setInfo(null);
     setBusy(true);
     try {
@@ -31,7 +34,9 @@ export default function StudentRegisterPage() {
         password,
       });
       if (error) {
-        setError(error.message ?? "Could not create your account. Try again.");
+        const friendly = signupErrorMessage(error);
+        setError(friendly.message);
+        setEmailTaken(friendly.emailInUse);
         return;
       }
       // A 6-digit code was sent (email provider, or server terminal in dev).
@@ -183,9 +188,17 @@ export default function StudentRegisterPage() {
             </div>
           </div>
           {error && (
-            <p role="alert" className="rounded-xl bg-danger-bg px-4 py-3 text-sm font-medium text-danger-tx">
-              {error}
-            </p>
+            <div role="alert" className="rounded-xl bg-danger-bg px-4 py-3 text-sm font-medium text-danger-tx">
+              <p>{error}</p>
+              {emailTaken && (
+                <p className="mt-1">
+                  Own this email?{" "}
+                  <Link href="/login" className="font-bold underline">
+                    Log in instead
+                  </Link>
+                </p>
+              )}
+            </div>
           )}
           <button type="submit" disabled={busy}
             className="h-11 w-full rounded-xl bg-edufarm-800 text-sm font-bold text-white disabled:opacity-50">

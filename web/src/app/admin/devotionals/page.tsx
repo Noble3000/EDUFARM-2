@@ -51,11 +51,17 @@ export default function DevotionalsAdmin() {
   }
 
   async function act(id: string, action: string) {
-    await fetch("/api/admin/devotionals", {
+    setNotice(null);
+    const res = await fetch("/api/admin/devotionals", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, action }),
     });
+    if (!res.ok) {
+      setNotice("Could not update. Try again.");
+    } else if (action === "publish") {
+      setNotice("Published — the previous devotional was retired to history.");
+    }
     load();
   }
 
@@ -63,8 +69,9 @@ export default function DevotionalsAdmin() {
     <AdminShell>
       <h1 className="font-display text-2xl font-bold">Devotionals</h1>
       <p className="mt-1 text-sm text-ink-600">
-        Written manually — no AI generation. Only published items flagged for
-        landing display appear publicly.
+        Written manually — no AI generation. Only one devotional is live at a
+        time: publishing a new one automatically retires the previous to
+        history below. Nothing is deleted.
       </p>
 
       <form onSubmit={create} className="mt-4 space-y-3 rounded-2xl border border-line p-5">

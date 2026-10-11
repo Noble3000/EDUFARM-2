@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { signupErrorMessage } from "@/lib/auth-errors";
 
 type Step = "account" | "code" | "evidence" | "done";
 
@@ -18,18 +19,22 @@ export default function LecturerRegisterPage() {
   const [department, setDepartment] = useState("");
   const [files, setFiles] = useState<FileList | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [emailTaken, setEmailTaken] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function createAccount(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setEmailTaken(false);
     setInfo(null);
     setBusy(true);
     try {
       const { error } = await authClient.signUp.email({ name, email, password });
       if (error) {
-        setError(error.message ?? "Could not create your account. Try again.");
+        const friendly = signupErrorMessage(error);
+        setError(friendly.message);
+        setEmailTaken(friendly.emailInUse);
         return;
       }
       setStep("code");
@@ -250,7 +255,17 @@ export default function LecturerRegisterPage() {
               </div>
             </div>
             {error && (
-              <p role="alert" className="rounded-xl bg-danger-bg px-4 py-3 text-sm font-medium text-danger-tx">{error}</p>
+              <div role="alert" className="rounded-xl bg-danger-bg px-4 py-3 text-sm font-medium text-danger-tx">
+                <p>{error}</p>
+                {emailTaken && (
+                  <p className="mt-1">
+                    Own this email?{" "}
+                    <Link href="/login" className="font-bold underline">
+                      Log in instead
+                    </Link>
+                  </p>
+                )}
+              </div>
             )}
             <button type="submit" disabled={busy}
               className="h-11 w-full rounded-xl bg-ink-900 text-sm font-bold text-white disabled:opacity-50">

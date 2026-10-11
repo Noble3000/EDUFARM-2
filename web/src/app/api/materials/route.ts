@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { materials } from "@/lib/db/schema";
+import { materials, courses } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth-helpers";
 import { presignedViewUrl, presignedDownloadUrl } from "@/lib/storage/r2";
 
@@ -13,11 +13,19 @@ export async function POST(req: Request) {
     if (!user || (user.role !== "lecturer" && user.role !== "admin")) {
       return NextResponse.json({ error: "lecturer" }, { status: 403 });
     }
-    const { courseId, title, type, session, filePath, allowDownload } = (await req.json()) ?? {};
+    const { courseId, title, type, session, filePath, allowDownload, publish } = (await req.json()) ?? {};
     if (!courseId || !title?.trim() || !filePath) {
       return NextResponse.json({ error: "Course, title, and uploaded file are required." }, { status: 400 });
     }
+    // Lecturer/admins only: invalid course IDs are rejected with a clear
+    // message instead of a bare database error.
+    const course = (await db.select({ id: courses.id }).from(courses).where(eq(courses.id, courseId)))[0];
+    if (!course) {
+      return NextResponse.json({ error: "That course was not found. Pick it from the list — don't type the ID by hand." }, { status: 400 });
+    }
     const id = crypto.randomUUID();
+    const now = new Date();
+    const live = publish === true;
     await db.insert(materials).values({
       id,
       courseId,
@@ -27,9 +35,10 @@ export async function POST(req: Request) {
       session: session?.trim() || null,
       filePath,
       allowDownload: allowDownload ?? false,
-      status: "draft",
+      status: live ? "published" : "draft",
+      ...(live ? { confirmedBy: user.id, confirmedAt: now } : {}),
     });
-    return NextResponse.json({ id }, { status: 201 });
+    return NextResponse.json({ id, status: live ? "published" : "draft" }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }
