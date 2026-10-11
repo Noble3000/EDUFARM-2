@@ -124,7 +124,14 @@ export default function LecturerRegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ evidencePaths: keys, department }),
       });
-      if (!rec.ok) throw new Error("Could not save evidence — try again.");
+      if (!rec.ok) {
+        const problem = await rec.json().catch(() => ({}));
+        if (rec.status === 401) throw new Error("Your session expired — log in again, then retry.");
+        if (problem.error === "not eligible") {
+          throw new Error("This account already has lecturer or admin access — no evidence needed.");
+        }
+        throw new Error(problem.error ?? "Could not save evidence — try again.");
+      }
       setStep("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

@@ -56,10 +56,17 @@ export async function PATCH(req: Request) {
       .set({ status: decision, reviewerId: admin.id, decidedAt: new Date(), note: note?.trim() || null })
       .where(eq(lecturerVerifications.id, id));
     // Approval gate (PRD acceptance): lecturer tools unlock only here.
-    await db
-      .update(user)
-      .set({ role: decision === "approved" ? "lecturer" : "student" })
-      .where(eq(user.id, app.userId));
+    // Never touch admins: approving a row that points at an admin (e.g. a
+    // self-test) must not demote them. Rejection returns non-admins to student.
+    const target = (
+      await db.select({ role: user.role }).from(user).where(eq(user.id, app.userId))
+    )[0]?.role;
+    if (target !== "admin") {
+      await db
+        .update(user)
+        .set({ role: decision === "approved" ? "lecturer" : "student" })
+        .where(eq(user.id, app.userId));
+    }
     await db.insert(auditLog).values({
       id: crypto.randomUUID(),
       actorId: admin.id,
