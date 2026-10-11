@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* Self-host on local device: standalone output for `node server.js` / PM2 / Caddy */
-  output: "standalone",
+  /* Netlify serves the default build output. Local prod can still run
+     `npm run build && npm start` (needs node_modules present). */
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

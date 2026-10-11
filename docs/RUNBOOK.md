@@ -75,6 +75,39 @@ powershell -ExecutionPolicy Bypass -File web\scripts\e2e.ps1
 # devotional publish→public, live AI answer, R2-missing 503.
 ```
 
+## Deploy to Netlify (free `*.netlify.app` domain + auto-deploy)
+
+Why Netlify fits: Next.js App Router runs there with zero code changes.
+One hard rule: **Netlify cannot reach your PC's Postgres**, so production uses
+a hosted Postgres (Neon free tier). Local dev keeps using local Postgres —
+`DATABASE_URL` (dev, local) vs `DATABASE_URL_PROD` (Neon) already split this.
+
+Repo is ready: `netlify.toml` (base `web`, build `npm run build`,
+publish `.next`, Node 22). Auto-deploy = every push to `main` rebuilds.
+
+1. **Neon** (neon.tech → sign up → New Project → Postgres 16):
+   copy the **pooled** connection string
+   (`postgres://user:pass@ep-xxx-pooler.../neondb?sslmode=require`).
+   Paste it to your builder → migrations + seed run remotely.
+2. **Netlify** (app.netlify.com → sign up → Add a new site → Import an
+   existing project → GitHub → `Noble3000/EDUFARM-2`):
+   base directory `web`, build command + publish auto-filled from `netlify.toml`.
+3. **Site settings → Environment variables** — set all of these, then
+   **Trigger deploy**:
+   `DATABASE_URL` = Neon pooled string, `BETTER_AUTH_SECRET` (generate:
+   any 48-char random), `BETTER_AUTH_URL` = `https://<your-site>.netlify.app`,
+   `AI_API_KEY` / `AI_MODEL=gemini-3.5-flash` /
+   `AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai`,
+   `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` /
+   `R2_BUCKET=edufarm-prod` (create it) / `R2_ENDPOINT`, `RESEND_API_KEY` +
+   `EMAIL_FROM` (or leave email unset → links log to Function Logs).
+4. First deploy gives you the URL → set it as `BETTER_AUTH_URL` → redeploy
+   once (or set it before if you pre-named the site).
+5. Register on the live site, promote yourself to admin via Neon SQL editor:
+   `UPDATE "user" SET role='admin' WHERE email='you@...';`
+
+Free-domain rename anytime: Site settings → Change site name → `edufarm.netlify.app`.
+
 ## Verify admin is working
 
 1. `/login` → dashboard says “Welcome back!” (auth + DB ok).
