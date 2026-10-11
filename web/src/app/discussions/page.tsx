@@ -5,8 +5,11 @@ import Link from "next/link";
 
 type Thread = { id: string; courseId: string; question: string; createdAt: string };
 type Reply = { id: string; body: string; createdAt: string };
+type Feedback = { id: string; courseId: string; body: string; readAt?: string | null; createdAt: string };
 
 export default function DiscussionsPage() {
+  const [tab, setTab] = useState<"qa" | "feedback">("qa");
+  const [role, setRole] = useState<string>("student");
   const [threads, setThreads] = useState<Thread[]>([]);
   const [replies, setReplies] = useState<Record<string, Reply[]>>({});
   const [openId, setOpenId] = useState<string | null>(null);
@@ -15,6 +18,10 @@ export default function DiscussionsPage() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "down">("loading");
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [fbBody, setFbBody] = useState("");
+  const [fbCourse, setFbCourse] = useState("");
+  const [fbNotice, setFbNotice] = useState<string | null>(null);
 
   function load() {
     fetch("/api/qa")
@@ -31,7 +38,48 @@ export default function DiscussionsPage() {
 
   useEffect(() => {
     load();
+    fetch("/api/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.user?.role) setRole(d.user.role);
+      })
+      .catch(() => {});
+    loadFeedback("");
   }, []);
+
+  function loadFeedback(course: string) {
+    fetch(`/api/feedback${course ? `?course=${encodeURIComponent(course)}` : ""}`)
+      .then((r) => (r.ok ? r.json() : { feedback: [] }))
+      .then((d) => setFeedback(d.feedback ?? []))
+      .catch(() => {});
+  }
+
+  async function sendFeedback(e: React.FormEvent) {
+    e.preventDefault();
+    setFbNotice(null);
+    const res = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ courseId: fbCourse || undefined, body: fbBody }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setFbNotice(json.error ?? "Could not send. Join the course first.");
+      return;
+    }
+    setFbBody("");
+    setFbNotice("Sent — only your lecturer sees this, never classmates.");
+    loadFeedback("");
+  }
+
+  async function markRead(id: string) {
+    await fetch("/api/feedback", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    loadFeedback(fbCourse);
+  }
 
   async function ask(e: React.FormEvent) {
     e.preventDefault();
@@ -97,6 +145,24 @@ export default function DiscussionsPage() {
           </span>
         </header>
 
+        <div className="mt-4 flex gap-2" role="tablist" aria-label="Discussion sections">
+          {(["qa", "feedback"] as const).map((t) => (
+            <button
+              key={t}
+              role="tab"
+              aria-selected={tab === t}
+              onClick={() => setTab(t)}
+              className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                tab === t ? "bg-edufarm-800 text-white" : "bg-appwash text-ink-600 hover:bg-edufarm-050"
+              }`}
+            >
+              {t === "qa" ? "Course Q&A" : "Feedback to lecturers"}
+            </button>
+          ))}
+        </div>
+
+        {tab === "qa" && (
+        <>
         <section className="mt-4 rounded-2xl border border-line p-5">
           <h1 className="font-display text-xl font-bold">Ask a course question</h1>
           <p className="mt-1 text-[13px] text-ink-600">
@@ -176,6 +242,89 @@ export default function DiscussionsPage() {
             ))}
           </ul>
         </section>
+        </>
+        )}
+
+        {tab === "feedback" && (
+        <section className="mt-4 rounded-2xl border border-line p-5">
+          <h1 className="font-display text-xl font-bold">
+            {role === "student" ? "Message your lecturer" : "Student feedback inbox"}
+          </h1>
+          <p className="mt-1 text-[13px] text-ink-600">
+            {role === "student"
+              ? "Private feedback for your lecturer — classmates never see it."
+              : "Private messages from your students. Reply in class or announcements; messages stay in this inbox."}
+          </p>
+
+          {role === "student" && (
+            <form onSubmit={sendFeedback} className="mt-3 space-y-3">
+              <input
+                value={fbCourse}
+                onChange={(e) => setFbCourse(e.target.value)}
+                placeholder="Course ID"
+                aria-label="Course ID"
+                className="h-11 w-full rounded-xl border border-line px-4 text-sm"
+              />
+              <textarea
+                value={fbBody}
+                onChange={(e) => setFbBody(e.target.value)}
+                required
+                rows={3}
+                maxLength={2000}
+                placeholder="What should your lecturer know? (pace, materials, deadlines…)"
+                aria-label="Feedback message"
+                className="w-full rounded-xl border border-line px-4 py-3 text-sm"
+              />
+              <button type="submit" className="h-11 rounded-xl bg-edufarm-800 px-6 text-sm font-bold text-white">
+                Send feedback
+              </button>
+              {fbNotice && <p role="status" className="text-sm font-medium text-edufarm-800">{fbNotice}</p>}
+            </form>
+          )}
+
+          {(role === "lecturer" || role === "admin") && (
+            <div className="mt-3 flex gap-2">
+              <input
+                value={fbCourse}
+                onChange={(e) => {
+                  setFbCourse(e.target.value);
+                  loadFeedback(e.target.value);
+                }}
+                placeholder="Filter by course ID (empty = all my courses)"
+                aria-label="Filter by course"
+                className="h-11 flex-1 rounded-xl border border-line px-4 text-sm"
+              />
+            </div>
+          )}
+
+          <ul className="mt-4 space-y-2">
+            {feedback.map((f) => (
+              <li key={f.id} className="rounded-xl border border-line p-3">
+                <p className="text-sm leading-relaxed">{f.body}</p>
+                <div className="mt-1 flex items-center gap-2 text-xs text-ink-600">
+                  <span className="tabular">{new Date(f.createdAt).toLocaleString()}</span>
+                  {f.readAt ? (
+                    <span className="rounded-full bg-success-bg px-2 py-0.5 font-semibold text-success-tx">read</span>
+                  ) : (
+                    <span className="rounded-full bg-warning-bg px-2 py-0.5 font-semibold text-warning-tx">new</span>
+                  )}
+                  {(role === "lecturer" || role === "admin") && !f.readAt && (
+                    <button onClick={() => markRead(f.id)}
+                      className="ml-auto rounded-lg px-2 py-1 font-semibold ring-1 ring-line hover:bg-appwash">
+                      Mark read
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+            {feedback.length === 0 && (
+              <li className="text-sm text-ink-600">
+                {role === "student" ? "No feedback sent yet." : "Inbox empty."}
+              </li>
+            )}
+          </ul>
+        </section>
+        )}
       </div>
     </div>
   );

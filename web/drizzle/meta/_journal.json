@@ -15,6 +15,13 @@
       "when": 1791660778332,
       "tag": "0001_soft_the_anarchist",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791676199050,
+      "tag": "0002_jazzy_wolf_cub",
+      "breakpoints": true
     }
   ]
 }

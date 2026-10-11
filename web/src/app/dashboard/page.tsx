@@ -183,10 +183,35 @@ export default function DashboardPage() {
             Welcome back{me?.name ? `, ${me.name.split(" ")[0]}` : ""}!
           </h1>
           <p className="mt-1 text-[13px] opacity-90">
-            Academic activity first: deadlines, assignments needing action,
-            announcements, recent course activity.
+            {me?.role === "lecturer"
+              ? "Your teaching workspace: schedule sessions, publish materials and announcements, set work, mark, and read student feedback."
+              : "Academic activity first: deadlines, assignments needing action, announcements, recent course activity."}
           </p>
         </section>
+
+        {(me?.role === "lecturer" || me?.role === "admin") && (
+          <section className="mt-4 rounded-2xl border border-line p-5" aria-label="Teaching shortcuts">
+            <h2 className="font-display text-lg font-semibold">Teach</h2>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {[
+                ["Schedule session", "/sessions"],
+                ["New assignment", "/assignments"],
+                ["New test", "/tests"],
+                ["Upload material", "/library"],
+                ["Announce", "/courses"],
+                ["Read feedback", "/discussions"],
+              ].map(([label, href]) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className="rounded-xl bg-ink-900 p-3 text-center text-[13px] font-semibold text-white hover:opacity-90"
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="mt-4 grid gap-4 md:grid-cols-2" aria-label="Academic activity">
           <article className="rounded-2xl border border-line p-5">

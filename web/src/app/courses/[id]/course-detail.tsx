@@ -7,21 +7,33 @@ type Overview = {
   course: { id: string; code: string; title: string; lecturerName?: string | null; unitLoad?: number | null; session?: string | null };
   materials: { id: string; title: string; type: string; status: string; allowDownload: boolean }[];
   announcements: { id: string; body: string; publishedAt: string }[];
-  sessions: { id: string; title: string; meetingUrl: string; startsAt: string }[];
+  sessions: { id: string; title: string; meetingUrl: string; startsAt: string; hostName?: string | null }[];
   assessments: { id: string; title: string; dueAt?: string | null }[];
   tests?: { id: string; title: string; dueAt?: string | null }[];
 };
 
+type RosterRow = {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  matricNo?: string | null;
+  department?: string | null;
+  level?: string | null;
+};
+
 const TABS = ["Materials", "Announcements", "Sessions", "Assessments"] as const;
+type Tab = (typeof TABS)[number] | "Students";
 
 export function CourseDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [data, setData] = useState<Overview | null>(null);
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Materials");
+  const [tab, setTab] = useState<Tab>("Materials");
   const [state, setState] = useState<"loading" | "ready" | "down" | "missing">("loading");
   const [staff, setStaff] = useState(false);
   const [announce, setAnnounce] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const [roster, setRoster] = useState<RosterRow[] | null>(null);
 
   const load = useCallback(() => {
     fetch(`/api/courses/${id}/overview`)
@@ -74,6 +86,29 @@ export function CourseDetail({ params }: { params: Promise<{ id: string }> }) {
     window.open(json.url, "_blank", "noopener");
   }
 
+  async function reportMaterial(materialId: string, title: string) {
+    const reason = window.prompt(`Report "${title}"? Give a brief reason:`);
+    if (!reason?.trim()) return;
+    const res = await fetch("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetType: "material", targetId: materialId, reason }),
+    });
+    setNotice(res.ok ? "Thanks — a moderator will review this material." : "Could not send the report.");
+  }
+
+  async function openStudents() {
+    setTab("Students");
+    if (roster !== null) return;
+    const res = await fetch(`/api/courses/${id}/students`);
+    if (res.ok) {
+      const json = await res.json();
+      setRoster(json.students ?? []);
+    } else {
+      setRoster([]);
+    }
+  }
+
   if (state === "loading") return <p className="mt-4 text-sm text-ink-600">Loading course…</p>;
   if (state === "down") return <p className="mt-4 text-sm text-ink-600">Database not reachable yet.</p>;
   if (state === "missing" || !data) return <p className="mt-4 text-sm text-ink-600">Course not found.</p>;
@@ -102,6 +137,18 @@ export function CourseDetail({ params }: { params: Promise<{ id: string }> }) {
             {t}
           </button>
         ))}
+        {staff && (
+          <button
+            role="tab"
+            aria-selected={tab === "Students"}
+            onClick={openStudents}
+            className={`rounded-full px-4 py-2 text-sm font-semibold ${
+              tab === "Students" ? "bg-ink-900 text-white" : "bg-appwash text-ink-600 hover:bg-edufarm-050"
+            }`}
+          >
+            Students
+          </button>
+        )}
       </div>
       <div className="mt-4 rounded-2xl border border-line p-5">
         {tab === "Materials" &&
@@ -128,6 +175,11 @@ export function CourseDetail({ params }: { params: Promise<{ id: string }> }) {
                         Download
                       </button>
                     )}
+                    <button onClick={() => reportMaterial(m.id, m.title)}
+                      title="Report incorrect or inappropriate content"
+                      className="rounded-lg px-2 py-1.5 text-xs font-semibold text-ink-600 ring-1 ring-line hover:bg-danger-bg hover:text-danger-tx">
+                      Report
+                    </button>
                   </span>
                 </li>
               ))}
@@ -174,6 +226,7 @@ export function CourseDetail({ params }: { params: Promise<{ id: string }> }) {
                     <div className="text-sm font-semibold">{s.title}</div>
                     <div className="tabular text-xs text-ink-600">
                       {new Date(s.startsAt).toLocaleString()}
+                      {s.hostName ? ` · Hosted by ${s.hostName}` : ""}
                     </div>
                   </div>
                   <a href={s.meetingUrl} target="_blank" rel="noopener noreferrer"
@@ -207,6 +260,36 @@ export function CourseDetail({ params }: { params: Promise<{ id: string }> }) {
                     )}
                   </>
                 ))}
+              {tab === "Students" && staff && (
+                roster === null ? (
+                  <p className="text-sm text-ink-600">Loading roster…</p>
+                ) : roster.length === 0 ? (
+                  <Empty text="No students enrolled yet." />
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-line">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs uppercase tracking-wide text-ink-400">
+                          <th className="px-4 py-3">Name</th>
+                          <th className="px-4 py-3">Matric</th>
+                          <th className="px-4 py-3">Department</th>
+                          <th className="px-4 py-3">Level</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {roster.map((s) => (
+                          <tr key={s.id} className="border-t border-line">
+                            <td className="px-4 py-3 font-semibold">{s.name}</td>
+                            <td className="px-4 py-3 text-ink-600">{s.matricNo ?? "—"}</td>
+                            <td className="px-4 py-3 text-ink-600">{s.department ?? "—"}</td>
+                            <td className="px-4 py-3 text-ink-600">{s.level ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              )}
       </div>
     </>
   );

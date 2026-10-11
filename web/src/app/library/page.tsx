@@ -95,6 +95,17 @@ export default function LibraryPage() {
     search(q);
   }
 
+  async function reportMaterial(id: string, title: string) {
+    const reason = window.prompt(`Report "${title}"? Give a brief reason (incorrect, outdated, inappropriate…):`);
+    if (!reason?.trim()) return;
+    const res = await fetch("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetType: "material", targetId: id, reason }),
+    });
+    setNotice(res.ok ? "Thanks — a moderator will review this material." : "Could not send the report. Try again.");
+  }
+
   return (
     <div className="min-h-screen p-4 sm:p-8">
       <div className="mx-auto max-w-6xl rounded-3xl bg-white p-4 sm:p-6">
@@ -169,6 +180,7 @@ export default function LibraryPage() {
         <div className="mt-4 rounded-2xl border border-line p-5">
           <h1 className="font-display text-xl font-bold">Unified Library</h1>
           <p className="mt-1 text-[13px] text-ink-600">
+            Students view published materials here — only lecturers upload.
             Only lecturer-confirmed, published materials carry the confirmed
             badge. Downloads appear only when the lecturer permits them.
           </p>
@@ -201,6 +213,11 @@ export default function LibraryPage() {
                     Confirm & publish
                   </button>
                 )}
+                <button onClick={() => reportMaterial(m.id, m.title)}
+                  title="Report incorrect or inappropriate content"
+                  className="rounded-xl px-2 py-1.5 text-xs font-semibold text-ink-600 ring-1 ring-line hover:bg-danger-bg hover:text-danger-tx">
+                  Report
+                </button>
               </li>
             ))}
           </ul>

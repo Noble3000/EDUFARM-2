@@ -11,6 +11,14 @@ export async function POST(req: Request) {
   try {
     const sessionUser = await getSessionUser();
     if (!sessionUser) return NextResponse.json({ error: "login" }, { status: 401 });
+    // Role separation (PRD §3): only student/pending accounts enter lecturer
+    // verification. Approved lecturers and admins never pass through here.
+    const current = (
+      await db.select({ role: user.role }).from(user).where(eq(user.id, sessionUser.id))
+    )[0]?.role;
+    if (current !== "student" && current !== "lecturer_pending") {
+      return NextResponse.json({ error: "not eligible" }, { status: 403 });
+    }
     const { evidencePaths, department } = (await req.json()) ?? {};
     if (!Array.isArray(evidencePaths) || evidencePaths.length === 0) {
       return NextResponse.json({ error: "Upload at least one evidence file." }, { status: 400 });

@@ -6,6 +6,7 @@ import Link from "next/link";
 type Item = {
   session: { id: string; title: string; meetingUrl: string; startsAt: string; instructions?: string | null };
   course: { id: string; code: string; title: string };
+  host: { id: string; name: string };
   state: "live" | "upcoming" | "past";
 };
 
@@ -100,8 +101,8 @@ export default function SessionsPage() {
         <div className="mt-4 rounded-2xl border border-line p-5">
           <h1 className="font-display text-xl font-bold">Central sessions</h1>
           <p className="mt-1 text-[13px] text-ink-600">
-            Same sessions also appear inside each course page. Join opens the
-            external call — EduFarm never hosts video.
+            Sessions are hosted by lecturers — you join from here or inside
+            each course page. Join opens the external call — EduFarm never hosts video.
           </p>
           {state === "loading" && <p className="mt-3 text-sm text-ink-600">Loading…</p>}
           {state === "down" && <p className="mt-3 text-sm text-ink-600">Database not reachable yet.</p>}
@@ -119,7 +120,7 @@ export default function SessionsPage() {
                     {g === "live" ? "● Live now" : g}
                   </h2>
                   <ul className="mt-2 space-y-2">
-                    {groups[g].map(({ session: s, course: c, state: st }) => (
+                    {groups[g].map(({ session: s, course: c, host: h, state: st }) => (
                       <li
                         key={s.id}
                         className="flex items-center gap-3 rounded-xl border border-line p-3"
@@ -128,7 +129,7 @@ export default function SessionsPage() {
                         <div>
                           <div className="text-sm font-semibold">{s.title}</div>
                           <div className="text-xs text-ink-600">
-                            {c.code} · <span className="tabular">{new Date(s.startsAt).toLocaleString()}</span>
+                            {c.code} · Hosted by {h.name} · <span className="tabular">{new Date(s.startsAt).toLocaleString()}</span>
                             {s.instructions ? ` · ${s.instructions}` : ""}
                           </div>
                         </div>

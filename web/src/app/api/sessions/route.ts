@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq, desc } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { liveSessions, courses, enrollments } from "@/lib/db/schema";
+import { liveSessions, courses, enrollments, user as usersTable } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth-helpers";
 
 export async function GET(req: Request) {
@@ -21,9 +21,10 @@ export async function GET(req: Request) {
     }
 
     const rows = await db
-      .select({ session: liveSessions, course: courses })
+      .select({ session: liveSessions, course: courses, host: usersTable })
       .from(liveSessions)
       .innerJoin(courses, eq(liveSessions.courseId, courses.id))
+      .innerJoin(usersTable, eq(liveSessions.hostId, usersTable.id))
       .orderBy(desc(liveSessions.startsAt));
 
     const filtered = rows.filter(({ session: s }) => {

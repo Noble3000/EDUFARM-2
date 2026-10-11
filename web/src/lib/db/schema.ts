@@ -329,3 +329,19 @@ export const testAttempts = pgTable("test_attempts", {
   submittedAt: timestamp("submitted_at").notNull().defaultNow(),
   publishedAt: timestamp("published_at"),
 });
+
+/* ---------- Student → lecturer feedback (PRD §5.3 Discussion and Feedback) ----------
+   One direction only: students write, lecturers read. Never peer-visible. */
+
+export const feedbackMessages = pgTable("feedback_messages", {
+  id: text("id").primaryKey(),
+  courseId: text("course_id")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }),
+  authorId: text("author_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  body: text("body").notNull(),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
