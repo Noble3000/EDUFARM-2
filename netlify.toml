@@ -10,3 +10,7 @@
 [build.environment]
   NODE_VERSION = "22"
   NPM_FLAGS = "--no-audit --no-fund"
+
+# Essential Next.js: SSR, API routes and middleware on Netlify's platform.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
