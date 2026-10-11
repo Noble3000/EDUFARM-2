@@ -1,5 +1,7 @@
 # EduFarm
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/4881bbf1-3740-45f7-8393-90fd97a8c554/deploy-status)](https://app.netlify.com/projects/edufarm-app/deploys)
+
 *A trusted academic ecosystem for students and lecturers*
 
 EduFarm connects students and lecturers through course activity, lecturer-confirmed learning materials, assessments, live-session information, course announcements and Q&A, and AI learning support. It is not a PDF marketplace — it helps students find reliable academic information and gives lecturers a central place to guide learning.
