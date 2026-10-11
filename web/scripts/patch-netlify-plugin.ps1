@@ -15,9 +15,11 @@ if ($c -notmatch "realpath,") {
   $c = $c -replace "readFile,\n  readlink,", "readFile,`n  readlink,`n  realpath,"
 }
 
-# 2) copy with dereferenced (real) files instead of verbatim symlinks
-#    (verbatim symlinks need Windows symlink privilege; copies don't)
-$c = $c -replace "verbatimSymlinks: true,", ""
+# 2) copy with dereferenced (real) files instead of symlinks.
+#    Node's fs.cp re-creates symlinks without this on some versions, and
+#    Windows without symlink privilege throws EPERM there.
+$c = $c -replace "verbatimSymlinks: true,", "dereference: true,"
+$c = $c -replace "recursive: true,\n        force: true,\n        filter", "recursive: true,`n        dereference: true,`n        force: true,`n        filter"
 
 # 3) recreate symlinks as real recursive copies of their resolved targets
 $old = @'
