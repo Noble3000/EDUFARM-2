@@ -12,15 +12,6 @@ type Course = {
   session?: string | null;
 };
 
-type Candidate = {
-  code: string;
-  title: string;
-  lecturerName: string;
-  unitLoad: number | null;
-  session: string;
-  selected: boolean;
-};
-
 export default function CoursesPage() {
   const [list, setList] = useState<Course[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "down">("loading");
@@ -29,9 +20,6 @@ export default function CoursesPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
-  const [doc, setDoc] = useState<File | null>(null);
-  const [candidates, setCandidates] = useState<Candidate[] | null>(null);
-  const [extracting, setExtracting] = useState(false);
 
   async function load() {
     try {
@@ -78,77 +66,6 @@ export default function CoursesPage() {
     }
   }
 
-  async function extract(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setNotice(null);
-    if (!doc) {
-      setError("Choose your registration document first (PDF, Word, or TXT).");
-      return;
-    }
-    setExtracting(true);
-    try {
-      const data = new FormData();
-      data.append("file", doc);
-      const res = await fetch("/api/courses/extract", { method: "POST", body: data });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(json.error ?? "Could not read that document.");
-        return;
-      }
-      if (!json.candidates || json.candidates.length === 0) {
-        setError("No course codes found — add courses manually below.");
-        setCandidates(null);
-        return;
-      }
-      setCandidates(json.candidates.map((c: Candidate) => ({ ...c, selected: true })));
-      setNotice(`Found ${json.candidates.length} course${json.candidates.length === 1 ? "" : "s"} — review, correct, then add.`);
-    } catch {
-      setError("Something went wrong. Try again.");
-    } finally {
-      setExtracting(false);
-    }
-  }
-
-  function patchCandidate(i: number, patch: Partial<Candidate>) {
-    setCandidates((prev) => (prev ?? []).map((c, j) => (j === i ? { ...c, ...patch } : c)));
-  }
-
-  async function addSelected() {
-    const chosen = (candidates ?? []).filter((c) => c.selected && c.code.trim() && c.title.trim());
-    if (chosen.length === 0) {
-      setError("Tick at least one course with a code and title.");
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      for (const c of chosen) {
-        const res = await fetch("/api/courses", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            code: c.code,
-            title: c.title,
-            lecturerName: c.lecturerName,
-            unitLoad: c.unitLoad,
-            session: c.session,
-          }),
-        });
-        if (!res.ok) throw new Error("add");
-      }
-      setCandidates(null);
-      setDoc(null);
-      setNotice(`Added ${chosen.length} course${chosen.length === 1 ? "" : "s"}.`);
-      await load();
-    } catch {
-      setError("Some courses could not be added (duplicates are skipped silently).");
-      await load();
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function add(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -187,23 +104,8 @@ export default function CoursesPage() {
           <section className="rounded-2xl border border-line p-5">
             <h1 className="font-display text-xl font-bold">Add a course</h1>
             <p className="mt-1 text-[13px] text-ink-600">
-              Two ways: upload your registration document and review what we
-              find — or enter manually. Nothing is official until confirmed.
+              Enter your courses manually — code, title, lecturer, units, session.
             </p>
-            <form onSubmit={extract} className="mt-4 rounded-2xl bg-appwash p-4">
-              <label htmlFor="doc" className="text-sm font-semibold">
-                Registration document (PDF, Word, TXT)
-              </label>
-              <div className="mt-2 flex gap-2">
-                <input id="doc" type="file" accept=".pdf,.doc,.docx,.txt"
-                  onChange={(e) => setDoc(e.target.files?.[0] ?? null)}
-                  className="min-w-0 flex-1 text-sm" />
-                <button disabled={extracting}
-                  className="h-11 shrink-0 rounded-xl bg-ink-900 px-4 text-sm font-bold text-white disabled:opacity-50">
-                  {extracting ? "Reading…" : "Extract"}
-                </button>
-              </div>
-            </form>
             <form onSubmit={add} className="mt-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -248,57 +150,6 @@ export default function CoursesPage() {
               </button>
             </form>
           </section>
-
-          {candidates !== null && (
-            <section aria-label="Review extracted courses" className="mt-4 rounded-2xl border-2 border-dashed border-edufarm-700/40 p-5 lg:col-span-2">
-              <h2 className="font-display text-lg font-semibold">
-                Review extracted courses ({candidates.filter((c) => c.selected).length} selected)
-              </h2>
-              <p className="mt-0.5 text-[13px] text-ink-600">
-                Correct anything wrong — nothing is added until you confirm.
-              </p>
-              <ul className="mt-3 space-y-3">
-                {candidates.map((c, i) => (
-                  <li key={`${c.code}-${i}`} className="rounded-2xl bg-appwash p-4">
-                    <label className="flex items-center gap-2 text-sm font-bold">
-                      <input type="checkbox" checked={c.selected}
-                        onChange={(e) => patchCandidate(i, { selected: e.target.checked })} />
-                      Add this course
-                    </label>
-                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                      <input value={c.code} onChange={(e) => patchCandidate(i, { code: e.target.value })}
-                        placeholder="Code" aria-label="Code"
-                        className="h-10 rounded-xl border border-line bg-white px-3 text-sm" />
-                      <input value={c.title} onChange={(e) => patchCandidate(i, { title: e.target.value })}
-                        placeholder="Title" aria-label="Title"
-                        className="h-10 rounded-xl border border-line bg-white px-3 text-sm" />
-                      <input value={c.lecturerName} onChange={(e) => patchCandidate(i, { lecturerName: e.target.value })}
-                        placeholder="Lecturer" aria-label="Lecturer"
-                        className="h-10 rounded-xl border border-line bg-white px-3 text-sm" />
-                      <div className="grid grid-cols-2 gap-2">
-                        <input value={c.unitLoad ?? ""} onChange={(e) => patchCandidate(i, { unitLoad: Number(e.target.value) || null })}
-                          inputMode="numeric" placeholder="Units" aria-label="Units"
-                          className="h-10 rounded-xl border border-line bg-white px-3 text-sm" />
-                        <input value={c.session} onChange={(e) => patchCandidate(i, { session: e.target.value })}
-                          placeholder="Session" aria-label="Session"
-                          className="h-10 rounded-xl border border-line bg-white px-3 text-sm" />
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-3 flex gap-2">
-                <button onClick={addSelected} disabled={busy}
-                  className="h-11 rounded-xl bg-edufarm-800 px-6 text-sm font-bold text-white disabled:opacity-50">
-                  {busy ? "Adding…" : "Add selected"}
-                </button>
-                <button onClick={() => setCandidates(null)}
-                  className="h-11 rounded-xl px-4 text-sm font-semibold ring-1 ring-line hover:bg-appwash">
-                  Discard
-                </button>
-              </div>
-            </section>
-          )}
 
           <section className="rounded-2xl border border-line p-5">
             <h2 className="font-display text-xl font-bold">Your courses</h2>

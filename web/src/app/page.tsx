@@ -27,7 +27,7 @@ const FEATURES = [
 
 const STEPS = [
   ["1", "Create your account", "Choose Student or Lecturer, verify your email."],
-  ["2", "Add your courses", "Enter manually or upload your registration document and review what we extract."],
+  ["2", "Add your courses", "Enter your courses manually — code, title, lecturer, units."],
   ["3", "Learn with trust", "Follow deadlines, join live sessions, use confirmed materials and AI help."],
 ];
 
