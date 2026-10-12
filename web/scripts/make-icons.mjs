@@ -92,6 +92,7 @@ function makeIcon(size, { maskable = false } = {}) {
 const jobs = [
   ["icon-192.png", makeIcon(192)],
   ["icon-512.png", makeIcon(512)],
+  ["icon-1024.png", makeIcon(1024)],
   ["maskable-512.png", makeIcon(512, { maskable: true })],
   ["apple-touch-icon.png", makeIcon(180)],
 ];
