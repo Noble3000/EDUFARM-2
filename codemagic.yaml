@@ -1,0 +1,46 @@
+# EduFarm iOS cloud build (Codemagic) — macOS is required to compile an .ipa,
+# which is impossible on a Windows PC, so this runs on a cloud Mac instead.
+# Setup (once, in a browser):
+#   1. Sign up at codemagic.io (GitHub login) -> Add application ->
+#      choose Noble3000/EDUFARM-2 (this file is auto-detected).
+#   2. For App Store / TestFlight: connect an Apple Developer account
+#      ($99/yr, developer.apple.com) under Teams -> Integrations, and add
+#      code-signing identities. Without it you still get an unsigned
+#      simulator/dev build for testing.
+# Then every build below runs in the cloud; download the .ipa artifact.
+workflows:
+  ios-edufarm:
+    name: EduFarm iOS
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_ids:
+          - com.edufarm.app
+      vars:
+        XCODE_VERSION: "16.2"
+        NODE_VERSION: "22"
+      node: 22
+    scripts:
+      - name: Install web dependencies
+        script: |
+          npm --prefix web install --no-audit --no-fund
+      - name: Sync Capacitor iOS shell
+        script: |
+          npx --prefix web cap sync ios
+      - name: CocoaPods install
+        script: |
+          cd web/ios/App && pod install --repo-update || true
+          cd ../../..
+      - name: Set bundle version from build number
+        script: |
+          cd web/ios/App
+          agvtool new-version -all "$BUILD_NUMBER" || true
+    artifacts:
+      - web/ios/App/build/*.ipa
+      - web/ios/App/build/*.app
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
