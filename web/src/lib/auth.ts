@@ -6,6 +6,14 @@ import { sendVerificationCodeEmail } from "./email";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
+  // Live deploys must list their public URL here or every login/signup is
+  // rejected with "Invalid origin". Localhost works without it.
+  // BETTER_AUTH_URL on the host must exactly match the live site URL.
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL,
+    "https://edufarm-app.netlify.app",
+    "http://localhost:3000",
+  ].filter((v): v is string => !!v),
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
