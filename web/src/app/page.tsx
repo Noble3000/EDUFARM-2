@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
+import { InstallButton } from "@/components/pwa";
 import { LiveDevotional } from "./devotional";
 
 const FEATURES = [
@@ -51,7 +52,7 @@ export default function Home() {
             lecturer-confirmed learning materials, assessments, live-session
             information, announcements and Q&amp;A, and AI learning support.
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <Link
               href="/register"
               className="rounded-xl bg-white px-6 py-3 text-sm font-bold text-edufarm-800"
@@ -64,7 +65,11 @@ export default function Home() {
             >
               Log In
             </Link>
+            <InstallButton dark />
           </div>
+          <p className="mt-3 text-xs opacity-75">
+            Installable on Android, iPhone, and desktop — works offline for pages you&apos;ve opened.
+          </p>
         </section>
 
         {/* Key academic features */}

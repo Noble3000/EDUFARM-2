@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { InstallButton } from "@/components/pwa";
 
 type Me = {
   id: string;
@@ -125,7 +126,8 @@ export default function DashboardPage() {
           <span className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-edufarm-800">
             Dashboard
           </span>
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-2">
+            <InstallButton dark compact />
             <span className="hidden text-[13px] opacity-90 sm:block">
               {me?.name}
             </span>
