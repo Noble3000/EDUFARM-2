@@ -65,6 +65,11 @@ export async function POST(req: Request) {
       );
     }
     const id = crypto.randomUUID();
+    // Reject unknown course IDs with a clear message instead of a bare FK error.
+    const course = (await db.select({ id: courses.id }).from(courses).where(eq(courses.id, courseId)))[0];
+    if (!course) {
+      return NextResponse.json({ error: "That course was not found. Pick it from the list — don't type the ID by hand." }, { status: 400 });
+    }
     await db.insert(assignments).values({
       id,
       courseId,
