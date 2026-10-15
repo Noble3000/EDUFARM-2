@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { WorkFeedback } from "@/components/work-feedback";
 
 type Detail = {
   assignment: { id: string; title: string; instructions: string; dueAt?: string | null; allowFile: boolean; allowText: boolean };
@@ -136,6 +137,10 @@ export function AssignmentDetail({ params }: { params: Promise<{ id: string }> }
         </section>
       )}
 
+      {data.submission !== undefined && (
+        <WorkFeedback targetType="assignment" targetId={id} canPost />
+      )}
+
       {data.submissions !== undefined && (
         <section className="mt-4 rounded-2xl border border-line p-5">
           <h2 className="font-display text-lg font-semibold">
@@ -154,6 +159,10 @@ export function AssignmentDetail({ params }: { params: Promise<{ id: string }> }
             ))}
           </ul>
         </section>
+      )}
+
+      {data.submissions !== undefined && (
+        <WorkFeedback targetType="assignment" targetId={id} canPost={false} />
       )}
 
       {notice && <p role="status" className="mt-4 rounded-xl bg-edufarm-050 px-4 py-3 text-sm font-medium text-edufarm-800">{notice}</p>}

@@ -227,6 +227,20 @@ export const qaReplies = pgTable("qa_replies", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+/* ---------- Post-work feedback (students speak, lecturers read) ---------- */
+
+export const workFeedback = pgTable("work_feedback", {
+  id: text("id").primaryKey(),
+  // what the feedback is about: assignment | test (courses stay documentation-only)
+  targetType: text("target_type").notNull(),
+  targetId: text("target_id").notNull(),
+  studentId: text("student_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const reports = pgTable("reports", {
   id: text("id").primaryKey(),
   reporterId: text("reporter_id")

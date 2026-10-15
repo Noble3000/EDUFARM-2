@@ -1,107 +1,71 @@
 import { NextResponse } from "next/server";
-import { eq, and, desc, or } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { feedbackMessages, enrollments, courses } from "@/lib/db/schema";
+import { workFeedback, user as usersTable } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth-helpers";
 
-// GET: students see their own sent feedback; lecturers see feedback left on
-// courses they own or created (admins see all). Never peer-visible.
+const TARGETS = ["assignment", "test"] as const;
+
+// Post-work feedback: students speak after doing an assignment/test,
+// lecturers read. Students see their own entries; staff see everything
+// with names attached.
 export async function GET(req: Request) {
   try {
     const user = await getSessionUser();
     if (!user) return NextResponse.json({ feedback: [] }, { status: 401 });
-    const courseId = new URL(req.url).searchParams.get("course")?.trim() ?? "";
-
-    if (user.role === "student") {
-      const rows = await db
-        .select()
-        .from(feedbackMessages)
-        .where(eq(feedbackMessages.authorId, user.id))
-        .orderBy(desc(feedbackMessages.createdAt));
-      return NextResponse.json({
-        feedback: rows.filter((r) => !courseId || r.courseId === courseId),
-      });
+    const url = new URL(req.url);
+    const targetType = url.searchParams.get("targetType")?.trim() ?? "";
+    const targetId = url.searchParams.get("targetId")?.trim() ?? "";
+    if (!TARGETS.includes(targetType as (typeof TARGETS)[number]) || !targetId) {
+      return NextResponse.json({ feedback: [] });
     }
 
-    if (user.role !== "lecturer" && user.role !== "admin") {
-      return NextResponse.json({ feedback: [] }, { status: 403 });
-    }
-
-    let scope: string[] | null = null;
-    if (user.role === "lecturer") {
-      const owned = await db
-        .select({ id: courses.id })
-        .from(courses)
-        .where(
-          or(eq(courses.ownerLecturerId, user.id), eq(courses.createdBy, user.id)),
-        );
-      scope = owned.map((c) => c.id);
-      if (scope.length === 0) return NextResponse.json({ feedback: [] });
-    }
-
+    const staff = user.role === "lecturer" || user.role === "admin";
     const rows = await db
-      .select()
-      .from(feedbackMessages)
-      .orderBy(desc(feedbackMessages.createdAt));
-    return NextResponse.json({
-      feedback: rows.filter(
-        (r) =>
-          (!courseId || r.courseId === courseId) &&
-          (!scope || scope.includes(r.courseId)),
-      ),
-    });
+      .select({ entry: workFeedback, student: usersTable })
+      .from(workFeedback)
+      .innerJoin(usersTable, eq(workFeedback.studentId, usersTable.id))
+      .where(
+        and(eq(workFeedback.targetType, targetType), eq(workFeedback.targetId, targetId)),
+      )
+      .orderBy(desc(workFeedback.createdAt));
+
+    const shaped = rows.map(({ entry: f, student: s }) => ({
+      id: f.id,
+      body: f.body,
+      createdAt: f.createdAt,
+      studentName: staff ? s.name : undefined,
+      mine: f.studentId === user.id,
+    }));
+    // Students see their own entries only.
+    return NextResponse.json({ feedback: staff ? shaped : shaped.filter((f) => f.mine) });
   } catch {
     return NextResponse.json({ feedback: [], error: "unavailable" }, { status: 503 });
   }
 }
 
-// POST: students only, and only for courses they joined.
 export async function POST(req: Request) {
   try {
     const user = await getSessionUser();
     if (!user || user.role !== "student") {
-      return NextResponse.json({ error: "students only" }, { status: 403 });
+      return NextResponse.json({ error: "Only students post feedback here." }, { status: 403 });
     }
-    const { courseId, body } = (await req.json()) ?? {};
-    if (!courseId || !body?.trim()) {
-      return NextResponse.json({ error: "Course and message are required." }, { status: 400 });
+    const { targetType, targetId, body } = (await req.json()) ?? {};
+    if (!TARGETS.includes(targetType) || !targetId || !body?.trim()) {
+      return NextResponse.json({ error: "Feedback text is required." }, { status: 400 });
     }
-    const en = await db
-      .select({ id: enrollments.id })
-      .from(enrollments)
-      .where(
-        and(eq(enrollments.studentId, user.id), eq(enrollments.courseId, courseId)),
-      );
-    if (en.length === 0) {
-      return NextResponse.json({ error: "Join the course first." }, { status: 403 });
+    if (body.trim().length > 2000) {
+      return NextResponse.json({ error: "Keep it under 2000 characters." }, { status: 400 });
     }
     const id = crypto.randomUUID();
-    await db.insert(feedbackMessages).values({
+    await db.insert(workFeedback).values({
       id,
-      courseId,
-      authorId: user.id,
-      body: body.trim().slice(0, 2000),
+      targetType,
+      targetId,
+      studentId: user.id,
+      body: body.trim(),
     });
     return NextResponse.json({ id }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "unavailable" }, { status: 503 });
-  }
-}
-
-// PATCH: lecturers/admins mark a message read.
-export async function PATCH(req: Request) {
-  try {
-    const user = await getSessionUser();
-    if (!user || (user.role !== "lecturer" && user.role !== "admin")) {
-      return NextResponse.json({ error: "lecturer" }, { status: 403 });
-    }
-    const { id } = (await req.json()) ?? {};
-    if (!id) return NextResponse.json({ error: "id is required." }, { status: 400 });
-    await db
-      .update(feedbackMessages)
-      .set({ readAt: new Date() })
-      .where(eq(feedbackMessages.id, id));
-    return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }

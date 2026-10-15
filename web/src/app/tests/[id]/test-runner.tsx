@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { WorkFeedback } from "@/components/work-feedback";
 
 type Q = { id: string; kind: string; prompt: string; options: string[]; marks: number };
 type Attempt = { id: string; status: string; score?: number | null };
@@ -166,6 +167,7 @@ export function TestRunner({ params }: { params: Promise<{ id: string }> }) {
         </form>
       )}
       {notice && <p role="status" className="mt-4 rounded-xl bg-edufarm-050 px-4 py-3 text-sm font-medium text-edufarm-800">{notice}</p>}
+      <WorkFeedback targetType="test" targetId={id} canPost />
     </>
   );
 }
@@ -233,6 +235,7 @@ function MarkingView({ staff, testId, onDone }: { staff: StaffDetail; testId: st
         ))}
       </ul>
       {notice && <p role="status" className="mt-4 text-sm font-medium text-edufarm-800">{notice}</p>}
+      <WorkFeedback targetType="test" targetId={testId} canPost={false} />
     </>
   );
 }
