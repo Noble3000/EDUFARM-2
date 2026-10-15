@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { assignments, courses, submissions } from "@/lib/db/schema";
+import { assignments, courses, submissions, user as usersTable } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth-helpers";
 
 // Detail: assignment + course + (student: own submission sans grade unless
@@ -40,11 +40,22 @@ export async function GET(
       return NextResponse.json({ assignment, course, submission: safe });
     }
 
-    const all = await db
-      .select()
+    // Lecturer inbox: every submission with the student's name + email, so
+    // received work is immediately attributable and gradable.
+    const rows = await db
+      .select({ submission: submissions, student: usersTable })
       .from(submissions)
+      .innerJoin(usersTable, eq(submissions.studentId, usersTable.id))
       .where(eq(submissions.assignmentId, id));
-    return NextResponse.json({ assignment, course, submissions: all });
+    return NextResponse.json({
+      assignment,
+      course,
+      submissions: rows.map(({ submission: s, student: u }) => ({
+        ...s,
+        studentName: u.name,
+        studentEmail: u.email,
+      })),
+    });
   } catch {
     return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }

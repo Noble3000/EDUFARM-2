@@ -7,7 +7,7 @@ type Detail = {
   assignment: { id: string; title: string; instructions: string; dueAt?: string | null; allowFile: boolean; allowText: boolean };
   course: { code: string; title: string };
   submission?: { id: string; status: string; score?: number | null; feedback?: string | null; bodyText?: string | null } | null;
-  submissions?: { id: string; studentId: string; status: string; score?: number | null; feedbackDraft?: string | null; bodyText?: string | null }[];
+  submissions?: { id: string; studentId: string; studentName: string; studentEmail: string; status: string; score?: number | null; feedbackDraft?: string | null; bodyText?: string | null }[];
 };
 
 export function AssignmentDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -139,8 +139,12 @@ export function AssignmentDetail({ params }: { params: Promise<{ id: string }> }
       {data.submissions !== undefined && (
         <section className="mt-4 rounded-2xl border border-line p-5">
           <h2 className="font-display text-lg font-semibold">
-            Marking queue ({data.submissions.length})
+            Received ({data.submissions.length}) — grade + publish, students see scores instantly
           </h2>
+          <p className="mt-1 text-[13px] text-ink-600">
+            Type a score, add feedback, hit <strong>Publish</strong> — the student&apos;s
+            submission box and Results update immediately.
+          </p>
           {data.submissions.length === 0 && (
             <p className="mt-1 text-sm text-ink-600">No submissions yet.</p>
           )}
@@ -161,16 +165,20 @@ function MarkRow({
   sub,
   onMark,
 }: {
-  sub: { id: string; studentId: string; status: string; score?: number | null; feedbackDraft?: string | null; bodyText?: string | null };
+  sub: { id: string; studentId: string; studentName: string; studentEmail: string; status: string; score?: number | null; feedbackDraft?: string | null; bodyText?: string | null };
   onMark: (id: string, publish: boolean, score?: string, feedback?: string) => void;
 }) {
   const [score, setScore] = useState(sub.score?.toString() ?? "");
   const [fb, setFb] = useState(sub.feedbackDraft ?? "");
   return (
     <li className="rounded-xl border border-line p-4">
-      <div className="flex items-center gap-2 text-sm">
-        <strong className="truncate">{sub.studentId.slice(0, 8)}…</strong>
-        <span className="rounded-full bg-warning-bg px-2.5 py-0.5 text-xs font-semibold text-warning-tx">{sub.status}</span>
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <strong>{sub.studentName}</strong>
+        <span className="text-xs text-ink-600">{sub.studentEmail}</span>
+        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${sub.status === "published" ? "bg-success-bg text-success-tx" : "bg-warning-bg text-warning-tx"}`}>{sub.status}</span>
+        {sub.status === "published" && sub.score !== null && sub.score !== undefined && (
+          <span className="tabular ml-auto text-sm font-bold">{sub.score}</span>
+        )}
       </div>
       {sub.bodyText && <p className="mt-2 max-h-32 overflow-auto rounded-lg bg-appwash p-3 text-[13px]">{sub.bodyText}</p>}
       <div className="mt-3 grid gap-2 sm:grid-cols-[100px_1fr]">
