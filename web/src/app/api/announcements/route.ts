@@ -1,26 +1,17 @@
 import { NextResponse } from "next/server";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { announcements, courses, enrollments, user } from "@/lib/db/schema";
+import { announcements, courses, user } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth-helpers";
 
-// Seamless feed: latest announcements with lecturer name + course attached —
-// no course-hunting needed. Students get their enrolled courses; lecturers
-// get what they posted; admins get the latest across the platform.
+// Seamless broadcast feed (WhatsApp-style): every announcement is visible to
+// every student with the lecturer's name attached — no course-hunting.
+// Courses stay attached for documentation only. Students are view-only here;
+// discussion and replies live in the feedback (Q&A) session, never here.
 export async function GET() {
   try {
     const me = await getSessionUser();
     if (!me) return NextResponse.json({ announcements: [] }, { status: 401 });
-
-    let scope: string[] | null = null; // null = all courses
-    if (me.role === "student") {
-      const mine = await db
-        .select({ courseId: enrollments.courseId })
-        .from(enrollments)
-        .where(eq(enrollments.studentId, me.id));
-      scope = mine.map((r) => r.courseId);
-      if (scope.length === 0) return NextResponse.json({ announcements: [] });
-    }
 
     const rows = await db
       .select({
@@ -36,7 +27,6 @@ export async function GET() {
       .from(announcements)
       .innerJoin(courses, eq(announcements.courseId, courses.id))
       .innerJoin(user, eq(announcements.authorId, user.id))
-      .where(scope ? inArray(announcements.courseId, scope) : undefined)
       .orderBy(desc(announcements.publishedAt))
       .limit(20);
 

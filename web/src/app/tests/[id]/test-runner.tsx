@@ -6,7 +6,7 @@ import Link from "next/link";
 type Q = { id: string; kind: string; prompt: string; options: string[]; marks: number };
 type Attempt = { id: string; status: string; score?: number | null };
 type FullQ = Q & { answerIndex?: number | null; answerText?: string | null };
-type AttRow = { id: string; studentId: string; status: string; score?: number | null; answers: Record<string, { selected?: number; text?: string }> };
+type AttRow = { id: string; studentId: string; studentName: string; studentEmail: string; status: string; score?: number | null; maxScore?: number | null; submittedAt: string; publishedAt?: string | null; answers: Record<string, { selected?: number; text?: string }> };
 
 type Detail = {
   test: { id: string; title: string; instructions?: string | null; durationMin?: number | null; dueAt?: string | null };
@@ -191,18 +191,22 @@ function MarkingView({ staff, testId, onDone }: { staff: StaffDetail; testId: st
     <>
       <h1 className="mt-2 font-display text-2xl font-bold">{staff.test.title}</h1>
       <p className="mt-1 text-[13px] text-ink-600">
-        {staff.course.code} · {staff.attempts.length} attempt{staff.attempts.length === 1 ? "" : "s"} · MCQ auto-marked
+        {staff.course.code} · {staff.attempts.length} attempt{staff.attempts.length === 1 ? "" : "s"} · MCQ auto-marked, published scores flow to Results
       </p>
       {staff.attempts.length === 0 && <p className="mt-4 text-sm text-ink-600">No attempts yet.</p>}
       <ul className="mt-4 space-y-3">
         {staff.attempts.map((a) => (
           <li key={a.id} className="rounded-2xl border border-line p-4">
-            <div className="flex items-center gap-2 text-sm">
-              <strong className="truncate">{a.studentId.slice(0, 8)}…</strong>
-              <span className="rounded-full bg-warning-bg px-2.5 py-0.5 text-xs font-semibold text-warning-tx">{a.status}</span>
-              {a.score !== null && a.score !== undefined && (
-                <span className="tabular text-sm font-bold">MCQ: {a.score}</span>
-              )}
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <strong>{a.studentName}</strong>
+              <span className="text-xs text-ink-600">{a.studentEmail}</span>
+              <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${a.status === "published" ? "bg-success-bg text-success-tx" : "bg-warning-bg text-warning-tx"}`}>{a.status}</span>
+              <span className="tabular ml-auto text-sm font-bold">
+                {a.score ?? "—"}{a.maxScore ? ` / ${a.maxScore}` : ""}
+              </span>
+            </div>
+            <div className="tabular mt-0.5 text-xs text-ink-600">
+              Submitted {new Date(a.submittedAt).toLocaleString()}
             </div>
             {shorts.map((q) => (
               <div key={q.id} className="mt-2 rounded-xl bg-appwash p-3">

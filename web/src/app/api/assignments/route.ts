@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { eq, inArray, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { assignments, courses, enrollments, submissions } from "@/lib/db/schema";
+import { assignments, courses, submissions } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth-helpers";
 
 export async function GET() {
@@ -9,28 +9,17 @@ export async function GET() {
     const user = await getSessionUser();
     if (!user) return NextResponse.json({ assignments: [] }, { status: 401 });
 
-    if (user.role === "lecturer" || user.role === "admin") {
-      const rows = await db
-        .select({ assignment: assignments, course: courses })
-        .from(assignments)
-        .innerJoin(courses, eq(assignments.courseId, courses.id))
-        .orderBy(desc(assignments.createdAt));
-      return NextResponse.json({ assignments: rows });
-    }
-
-    const en = await db
-      .select({ courseId: enrollments.courseId })
-      .from(enrollments)
-      .where(eq(enrollments.studentId, user.id));
-    const ids = en.map((e) => e.courseId);
-    if (ids.length === 0) return NextResponse.json({ assignments: [] });
-
+    // Simple system: every assignment is visible to every student.
+    // Courses stay attached for documentation only.
     const rows = await db
       .select({ assignment: assignments, course: courses })
       .from(assignments)
       .innerJoin(courses, eq(assignments.courseId, courses.id))
-      .where(inArray(assignments.courseId, ids))
       .orderBy(desc(assignments.createdAt));
+
+    if (user.role === "lecturer" || user.role === "admin") {
+      return NextResponse.json({ assignments: rows });
+    }
 
     const mine = await db
       .select()

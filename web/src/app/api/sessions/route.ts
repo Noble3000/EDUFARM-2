@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq, desc } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { liveSessions, courses, enrollments, user as usersTable } from "@/lib/db/schema";
+import { liveSessions, courses, user as usersTable } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth-helpers";
 
 export async function GET(req: Request) {
@@ -11,15 +11,8 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const courseId = url.searchParams.get("course")?.trim() ?? "";
 
-    let ids: string[] | null = null;
-    if (user.role === "student") {
-      const en = await db
-        .select({ courseId: enrollments.courseId })
-        .from(enrollments)
-        .where(eq(enrollments.studentId, user.id));
-      ids = en.map((e) => e.courseId);
-    }
-
+    // Simple system: every session is visible to every signed-in user.
+    // Courses stay attached for documentation only.
     const rows = await db
       .select({ session: liveSessions, course: courses, host: usersTable })
       .from(liveSessions)
@@ -29,7 +22,6 @@ export async function GET(req: Request) {
 
     const filtered = rows.filter(({ session: s }) => {
       if (courseId && s.courseId !== courseId) return false;
-      if (ids && !ids.includes(s.courseId)) return false;
       return true;
     });
 
@@ -74,6 +66,11 @@ export async function POST(req: Request) {
       );
     }
     const id = crypto.randomUUID();
+    // Reject unknown course IDs with a clear message instead of a bare FK error.
+    const course = (await db.select({ id: courses.id }).from(courses).where(eq(courses.id, courseId)))[0];
+    if (!course) {
+      return NextResponse.json({ error: "That course was not found. Pick it from the list — don't type the ID by hand." }, { status: 400 });
+    }
     await db.insert(liveSessions).values({
       id,
       courseId,

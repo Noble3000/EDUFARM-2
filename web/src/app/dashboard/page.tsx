@@ -241,7 +241,7 @@ export default function DashboardPage() {
               <p className="mt-1 text-sm text-ink-600">Loading…</p>
             ) : feed.length === 0 ? (
               <p className="mt-1 text-sm text-ink-600">
-                Nothing yet — announcements from your courses land here with the lecturer&apos;s name attached.
+                Nothing yet — lecturer announcements land here with the lecturer&apos;s name attached.
               </p>
             ) : (
               <ul className="mt-3 space-y-3">

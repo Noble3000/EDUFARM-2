@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { eq, inArray, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { tests, testQuestions, courses, enrollments, testAttempts } from "@/lib/db/schema";
+import { tests, testQuestions, courses, testAttempts } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth-helpers";
 
 export async function GET() {
@@ -9,28 +9,17 @@ export async function GET() {
     const user = await getSessionUser();
     if (!user) return NextResponse.json({ tests: [] }, { status: 401 });
 
-    if (user.role === "lecturer" || user.role === "admin") {
-      const rows = await db
-        .select({ test: tests, course: courses })
-        .from(tests)
-        .innerJoin(courses, eq(tests.courseId, courses.id))
-        .orderBy(desc(tests.createdAt));
-      return NextResponse.json({ tests: rows });
-    }
-
-    const en = await db
-      .select({ courseId: enrollments.courseId })
-      .from(enrollments)
-      .where(eq(enrollments.studentId, user.id));
-    const ids = en.map((e) => e.courseId);
-    if (ids.length === 0) return NextResponse.json({ tests: [] });
-
+    // Simple system: every test is visible to every student.
+    // Courses stay attached for documentation only.
     const rows = await db
       .select({ test: tests, course: courses })
       .from(tests)
       .innerJoin(courses, eq(tests.courseId, courses.id))
-      .where(inArray(tests.courseId, ids))
       .orderBy(desc(tests.createdAt));
+
+    if (user.role === "lecturer" || user.role === "admin") {
+      return NextResponse.json({ tests: rows });
+    }
 
     const mine = await db.select().from(testAttempts).where(eq(testAttempts.studentId, user.id));
     const byTest = new Map(mine.map((a) => [a.testId, a.status]));
@@ -74,6 +63,11 @@ export async function POST(req: Request) {
     }
 
     const id = crypto.randomUUID();
+    // Reject unknown course IDs with a clear message instead of a bare FK error.
+    const course = (await db.select({ id: courses.id }).from(courses).where(eq(courses.id, courseId)))[0];
+    if (!course) {
+      return NextResponse.json({ error: "That course was not found. Pick it from the list — don't type the ID by hand." }, { status: 400 });
+    }
     await db.insert(tests).values({
       id,
       courseId,

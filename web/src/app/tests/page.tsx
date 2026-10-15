@@ -23,6 +23,7 @@ export default function TestsPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "down">("loading");
   const [staff, setStaff] = useState(false);
+  const [courses, setCourses] = useState<{ id: string; code: string; title: string }[]>([]);
   const [form, setForm] = useState({ courseId: "", title: "", instructions: "", durationMin: "", dueAt: "" });
   const [qs, setQs] = useState<BuilderQ[]>([blankQ()]);
   const [notice, setNotice] = useState<string | null>(null);
@@ -46,7 +47,13 @@ export default function TestsPage() {
     fetch("/api/me")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (d?.user?.role === "lecturer" || d?.user?.role === "admin") setStaff(true);
+        if (d?.user?.role === "lecturer" || d?.user?.role === "admin") {
+          setStaff(true);
+          fetch("/api/courses")
+            .then((r) => (r.ok ? r.json() : null))
+            .then((c) => c?.courses && setCourses(c.courses))
+            .catch(() => {});
+        }
       })
       .catch(() => {});
   }, []);
@@ -102,9 +109,13 @@ export default function TestsPage() {
               proctoring in v1. One attempt per student.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <input value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value })}
-                required placeholder="Course ID" aria-label="Course ID"
-                className="h-11 rounded-xl border border-line px-4 text-sm" />
+              <select value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value })}
+                required aria-label="Course" className="h-11 rounded-xl border border-line px-4 text-sm">
+                <option value="">Pick a course…</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>{c.code} — {c.title}</option>
+                ))}
+              </select>
               <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
                 required placeholder="Title" aria-label="Title"
                 className="h-11 rounded-xl border border-line px-4 text-sm" />

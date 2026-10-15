@@ -145,6 +145,17 @@ export default function LibraryPage() {
     window.open(json.url, "_blank", "noopener");
   }
 
+  async function openMaterial(id: string, as: "view" | "download") {
+    setNotice(null);
+    const res = await fetch(`/api/materials?id=${id}&as=${as}`);
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setNotice(json.error ?? "Not available yet — try again in a moment.");
+      return;
+    }
+    window.open(json.url, "_blank", "noopener");
+  }
+
   async function reportMaterial(id: string, title: string) {
     const reason = window.prompt(`Report "${title}"? Give a brief reason (incorrect, outdated, inappropriate…):`);
     if (!reason?.trim()) return;
@@ -305,6 +316,16 @@ export default function LibraryPage() {
                 }`}>
                   {m.status === "published" ? "✓ lecturer-confirmed" : m.status}
                 </span>
+                <button onClick={() => openMaterial(m.id, "view")}
+                  className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold ring-1 ring-line hover:bg-appwash">
+                  View
+                </button>
+                {m.allowDownload && (
+                  <button onClick={() => openMaterial(m.id, "download")}
+                    className="shrink-0 rounded-lg bg-edufarm-800 px-3 py-1.5 text-xs font-bold text-white">
+                    Download
+                  </button>
+                )}
                 {staff && m.status !== "published" && (
                   <button onClick={() => confirm(m.id)}
                     className="rounded-xl bg-edufarm-800 px-3 py-1.5 text-xs font-bold text-white">

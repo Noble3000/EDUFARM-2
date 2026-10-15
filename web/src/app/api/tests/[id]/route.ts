@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { tests, testQuestions, courses, testAttempts } from "@/lib/db/schema";
+import { tests, testQuestions, courses, testAttempts, user as usersTable } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth-helpers";
 
 // Detail: students get questions WITHOUT answers; lecturers get everything.
@@ -47,8 +47,23 @@ export async function GET(
       });
     }
 
-    const attempts = await db.select().from(testAttempts).where(eq(testAttempts.testId, id));
-    return NextResponse.json({ test, course, questions, attempts });
+    // Lecturer result database: every taker with name, email, answers,
+    // auto-marked MCQ score, status, and timestamps — for documentation.
+    const attempts = await db
+      .select({ attempt: testAttempts, student: usersTable })
+      .from(testAttempts)
+      .innerJoin(usersTable, eq(testAttempts.studentId, usersTable.id))
+      .where(eq(testAttempts.testId, id));
+    return NextResponse.json({
+      test,
+      course,
+      questions,
+      attempts: attempts.map(({ attempt: a, student: s }) => ({
+        ...a,
+        studentName: s.name,
+        studentEmail: s.email,
+      })),
+    });
   } catch {
     return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }
