@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based dark mode: the toggle flips .dark on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* EduFarm Green — locked, max 2-stop gradients only */
   --color-edufarm-900: #0b4d2e;
@@ -42,6 +45,9 @@
 
 html {
   scroll-behavior: smooth;
+  /* Never allow sideways scrolling — small phones stay usable even if a
+     single row (long email, URL, pill) wants to be wider than the screen. */
+  overflow-x: clip;
 }
 
 body {
@@ -49,6 +55,8 @@ body {
   color: var(--color-ink-900);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  overflow-wrap: break-word;
 }
 
 h1,
@@ -85,4 +93,61 @@ h3 {
 
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Dark theme ----------
+   Overriding the @theme CSS variables recolours every token-based utility
+   (bg-appwash, text-ink-*, border-line, …). Literal `bg-white` card surfaces
+   are remapped separately so `text-white` on green buttons stays white. */
+.dark {
+  color-scheme: dark;
+  --banner-a-from: #0a3a24;
+  --banner-a-to: #052016;
+
+  --color-mint: #0a110d;
+  --color-appwash: #16211b;
+  --color-edufarm-050: #102019;
+  --color-edufarm-100: #163027;
+
+  --color-ink-900: #eaf2ec;
+  --color-ink-600: #b3c2b8;
+  --color-ink-400: #7f9387;
+  --color-line: #2a3a31;
+
+  --color-success-bg: #12301f;
+  --color-success-tx: #9ee7b8;
+  --color-warning-bg: #33280c;
+  --color-warning-tx: #f6d588;
+  --color-danger-bg: #3a1717;
+  --color-danger-tx: #f5a5a5;
+  --color-info-bg: #1c2140;
+  --color-info-tx: #b9c1ff;
+
+  --color-gold-bg: #2a2310;
+  --color-gold-tx: #f0d48a;
+}
+
+.dark .bg-white {
+  background-color: #111b15;
+}
+
+.dark .bg-ink-900 {
+  background-color: #0c1510;
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #0e1712;
+  color: var(--color-ink-900);
+}
+
+.dark .text-edufarm-800,
+.dark .text-edufarm-700 {
+  color: #7fe0b0;
+}
+
+.dark option {
+  background-color: #0e1712;
+  color: #eaf2ec;
 }

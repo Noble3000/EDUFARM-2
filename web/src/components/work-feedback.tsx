@@ -72,7 +72,7 @@ export function WorkFeedback({
           : "What students said after doing this work."}
       </p>
       {canPost && (
-        <form onSubmit={send} className="mt-3 flex gap-2">
+        <form onSubmit={send} className="mt-3 flex flex-wrap gap-2">
           <input
             value={body}
             onChange={(e) => setBody(e.target.value)}
@@ -80,7 +80,7 @@ export function WorkFeedback({
             maxLength={2000}
             placeholder="e.g. Q3 wording confused me, otherwise fair…"
             aria-label="Your feedback"
-            className="h-11 flex-1 rounded-xl border border-line px-4 text-sm"
+            className="h-11 min-w-0 flex-1 basis-40 rounded-xl border border-line px-4 text-sm"
           />
           <button
             disabled={busy || !body.trim()}

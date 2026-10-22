@@ -48,13 +48,16 @@ export const auth = betterAuth({
       expiresIn: 600, // 10 minutes
       sendVerificationOnSignUp: true,
       overrideDefaultEmailVerification: true,
+      // Allow signed-in users to change their email after proving ownership
+      // of the new address with a 6-digit code.
+      changeEmail: { enabled: true },
       async sendVerificationOTP({ email, otp, type }) {
         // Dev: code is visible in the server terminal so signup works
-        // without an email provider. Prod: delivered by Resend.
+        // without an email provider. Prod: delivered by the email chain.
         if (!process.env.RESEND_API_KEY) {
           console.log(`[auth] OTP for ${email} (${type}): ${otp}`);
         }
-        if (type === "email-verification") {
+        if (type === "email-verification" || type === "change-email") {
           await sendVerificationCodeEmail(email, otp);
         } else {
           console.log(`[auth] OTP for ${email} (${type}): ${otp}`);

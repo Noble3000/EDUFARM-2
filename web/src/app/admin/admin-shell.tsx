@@ -77,13 +77,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <Link href="/" className="block px-3 py-2 font-display text-lg font-bold">
             EduFarm <span className="text-sm font-semibold text-ink-600">· Admin</span>
           </Link>
-          <nav className="mt-2" aria-label="Admin">
+          <nav className="mt-2 flex gap-1 overflow-x-auto lg:flex-col" aria-label="Admin">
             {NAV.map(([label, href]) => (
               <Link
                 key={href}
                 href={href}
                 aria-current={pathname === href ? "page" : undefined}
-                className={`mt-1 flex h-10 items-center rounded-xl px-3 text-sm font-medium ${
+                className={`flex h-10 shrink-0 items-center rounded-xl px-3 text-sm font-medium ${
                   pathname === href
                     ? "bg-appwash font-bold text-ink-900"
                     : "text-ink-600 hover:bg-appwash"

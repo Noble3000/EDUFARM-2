@@ -56,7 +56,7 @@ export default function ModerationQueue() {
       <ul className="mt-2 space-y-3">
         {open.map((r) => (
           <li key={r.id} className="rounded-2xl border border-line p-4">
-            <div className="text-sm">
+            <div className="text-sm break-words">
               <strong>{r.targetType}</strong> · {r.reason}
             </div>
             <div className="tabular mt-0.5 text-xs text-ink-600">

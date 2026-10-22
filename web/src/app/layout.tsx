@@ -35,6 +35,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: "#0B4D2E",
 };
 
@@ -47,8 +49,18 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
+      suppressHydrationWarning
       className={`${display.variable} ${body.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          // Apply the saved theme before first paint so there is no flash.
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(localStorage.getItem('edufarm-theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-full font-body">
         <ServiceWorkerRegister />
         {children}

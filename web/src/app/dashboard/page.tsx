@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { InstallButton } from "@/components/pwa";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type Me = {
   id: string;
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<{ matricNo?: string | null; department?: string | null; level?: string | null } | null | undefined>(undefined);
   const [pform, setPform] = useState({ matricNo: "", department: "", level: "" });
   const [feed, setFeed] = useState<{ id: string; body: string; publishedAt: string; lecturerName: string; courseCode: string; courseTitle: string; courseId: string }[] | null>(null);
+  const [newActivity, setNewActivity] = useState<{ assignments: number; announcements: number } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -43,10 +45,43 @@ export default function DashboardPage() {
         }
         setMe(data.user);
         setState("ready");
-        fetch("/api/announcements")
-          .then((r) => (r.ok ? r.json() : null))
-          .then((a) => setFeed(a?.announcements ?? []))
-          .catch(() => setFeed([]));
+
+        // Green "new" badges: count items posted since this device's last visit.
+        let lastSeen: number;
+        try {
+          const raw = localStorage.getItem("edufarm:lastSeen");
+          lastSeen = raw ? Number(raw) : Date.now();
+        } catch {
+          lastSeen = Date.now();
+        }
+        const seenAt = Date.now();
+        Promise.all([
+          fetch("/api/announcements")
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null),
+          fetch("/api/assignments")
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null),
+        ]).then(([a, b]) => {
+          const announcements = (a?.announcements ?? []) as { publishedAt?: string }[];
+          setFeed(a?.announcements ?? []);
+          const assignmentRows = (b?.assignments ?? []) as {
+            assignment?: { createdAt?: string };
+          }[];
+          const timeOf = (value?: string) => (value ? Date.parse(value) : 0) || 0;
+          setNewActivity({
+            assignments: assignmentRows.filter(
+              (row) => timeOf(row.assignment?.createdAt) > lastSeen,
+            ).length,
+            announcements: announcements.filter((row) => timeOf(row.publishedAt) > lastSeen)
+              .length,
+          });
+          try {
+            localStorage.setItem("edufarm:lastSeen", String(seenAt));
+          } catch {
+            // Storage blocked — badges still work for this visit.
+          }
+        });
         if (data.user.role === "student") {
           fetch("/api/profile")
             .then((r) => (r.ok ? r.json() : null))
@@ -119,7 +154,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8">
       <div className="mx-auto max-w-6xl rounded-3xl bg-white p-4 sm:p-6">
-        <header className="flex h-14 items-center gap-4 rounded-2xl bg-edufarm-900 px-4 text-white">
+        <header className="flex min-h-14 flex-wrap items-center gap-2 rounded-2xl bg-edufarm-900 px-3 py-2 text-white sm:gap-4 sm:px-4">
           <Link href="/" className="font-display text-lg font-bold">
             EduFarm
           </Link>
@@ -128,6 +163,13 @@ export default function DashboardPage() {
           </span>
           <div className="ml-auto flex items-center gap-2">
             <InstallButton dark compact />
+            <ThemeToggle className="rounded-xl px-3 py-1.5 text-[13px] font-semibold ring-1 ring-white/30 hover:bg-white/10" />
+            <Link
+              href="/settings"
+              className="rounded-xl px-3 py-1.5 text-[13px] font-semibold ring-1 ring-white/30 hover:bg-white/10"
+            >
+              Settings
+            </Link>
             <span className="hidden text-[13px] opacity-90 sm:block">
               {me?.name}
             </span>
@@ -236,7 +278,14 @@ export default function DashboardPage() {
             </Link>
           </article>
           <article className="rounded-2xl border border-line p-5">
-            <h2 className="font-display text-lg font-semibold">Announcements</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-display text-lg font-semibold">Announcements</h2>
+              {(newActivity?.announcements ?? 0) > 0 && (
+                <span className="rounded-full bg-edufarm-700 px-2.5 py-0.5 text-xs font-bold text-white">
+                  {newActivity?.announcements} new
+                </span>
+              )}
+            </div>
             {feed === null ? (
               <p className="mt-1 text-sm text-ink-600">Loading…</p>
             ) : feed.length === 0 ? (
@@ -273,16 +322,29 @@ export default function DashboardPage() {
             ["Library", "/library"],
             ["AI Help", "/ai"],
             ["My Results", "/results"],
+            ["Settings", "/settings"],
             ...(me?.role === "admin" ? [["Admin", "/admin"] as [string, string]] : []),
-          ].map(([label, href]) => (
-            <Link
-              key={href}
-              href={href}
-              className="rounded-2xl border border-line p-4 text-center text-sm font-semibold hover:border-edufarm-700 hover:bg-edufarm-050"
-            >
-              {label}
-            </Link>
-          ))}
+          ].map(([label, href]) => {
+            const badge =
+              href === "/assignments" ? (newActivity?.assignments ?? 0) : 0;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className="relative rounded-2xl border border-line p-4 text-center text-sm font-semibold hover:border-edufarm-700 hover:bg-edufarm-050"
+              >
+                {label}
+                {badge > 0 && (
+                  <span
+                    className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-edufarm-700 px-1.5 text-[11px] font-bold text-white"
+                    aria-label={`${badge} new`}
+                  >
+                    {badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
       </div>
     </div>

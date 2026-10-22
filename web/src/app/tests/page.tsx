@@ -29,8 +29,15 @@ export default function TestsPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  function load() {
-    fetch("/api/tests")
+  function friendlyError(raw?: string, fallback = "Could not create. Try again.") {
+    if (!raw) return fallback;
+    if (raw === "unavailable") return "Database not reachable yet — test not saved. Try again in a moment.";
+    if (raw === "lecturer") return "Only lecturers can create tests.";
+    return raw;
+  }
+
+  function load(preserveOnFail = false) {
+    fetch("/api/tests", { cache: "no-store" })
       .then((res) => {
         if (!res.ok) throw new Error("down");
         return res.json();
@@ -39,7 +46,12 @@ export default function TestsPage() {
         setItems(data.tests ?? []);
         setState("ready");
       })
-      .catch(() => setState("down"));
+      .catch(() => {
+        // After a successful create we must not wipe a good list with a
+        // transient "down" state — keep showing what we have.
+        if (preserveOnFail) return;
+        setState("down");
+      });
   }
 
   useEffect(() => {
@@ -74,13 +86,13 @@ export default function TestsPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setNotice(json.error ?? "Could not create. Try again.");
+        setNotice(friendlyError(json.error));
         return;
       }
       setForm({ courseId: "", title: "", instructions: "", durationMin: "", dueAt: "" });
       setQs([blankQ()]);
       setNotice("Test created — students in the course can take it once.");
-      load();
+      load(true);
     } catch {
       setNotice("Something went wrong. Try again.");
     } finally {
@@ -91,7 +103,7 @@ export default function TestsPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8">
       <div className="mx-auto max-w-4xl rounded-3xl bg-white p-4 sm:p-6">
-        <header className="flex h-14 items-center gap-4 rounded-2xl bg-edufarm-900 px-4 text-white">
+        <header className="flex min-h-14 flex-wrap items-center gap-2 rounded-2xl bg-edufarm-900 px-3 py-2 text-white sm:gap-4 sm:px-4">
           <Link href="/dashboard" className="font-display text-lg font-bold">EduFarm</Link>
           <span className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-edufarm-800">
             Online Tests
@@ -132,7 +144,7 @@ export default function TestsPage() {
 
             {qs.map((q, i) => (
               <div key={i} className="space-y-2 rounded-2xl bg-appwash p-4">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <strong className="text-sm">Q{i + 1}</strong>
                   <select value={q.kind} onChange={(e) => patchQ(i, { kind: e.target.value as "mcq" | "short" })}
                     aria-label="Question type" className="h-9 rounded-lg border border-line bg-white px-2 text-sm">
@@ -200,8 +212,8 @@ export default function TestsPage() {
             {items.map(({ test: t, course: c, myStatus }) => (
               <li key={t.id}>
                 <Link href={`/tests/${t.id}`}
-                  className="flex items-center gap-3 rounded-2xl border border-line p-4 hover:border-edufarm-700 hover:bg-edufarm-050">
-                  <div>
+                  className="flex flex-wrap items-center gap-3 rounded-2xl border border-line p-4 hover:border-edufarm-700 hover:bg-edufarm-050">
+                  <div className="min-w-0 flex-1">
                     <div className="text-sm font-bold">{t.title}</div>
                     <div className="mt-0.5 text-xs text-ink-600">
                       {c.code}

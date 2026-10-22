@@ -92,7 +92,7 @@ export default function AIPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8">
       <div className="mx-auto max-w-4xl rounded-3xl bg-white p-4 sm:p-6">
-        <header className="flex h-14 items-center gap-4 rounded-2xl bg-edufarm-900 px-4 text-white">
+        <header className="flex min-h-14 flex-wrap items-center gap-2 rounded-2xl bg-edufarm-900 px-3 py-2 text-white sm:gap-4 sm:px-4">
           <Link href="/dashboard" className="font-display text-lg font-bold">EduFarm</Link>
           <span className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-edufarm-800">
             AI Help
@@ -138,7 +138,7 @@ export default function AIPage() {
               }`}>
                 {result.source === "course-material" ? "Based on course material" : "General knowledge"}
               </span>
-              <p className="mt-3 text-sm leading-relaxed whitespace-pre-wrap">{result.answer}</p>
+              <p className="mt-3 text-sm leading-relaxed break-words whitespace-pre-wrap">{result.answer}</p>
               {result.cites.length > 0 && (
                 <p className="mt-3 text-xs text-ink-600">
                   Grounded in: {result.cites.map((c) => c.title).join(" · ")}
@@ -179,7 +179,7 @@ export default function AIPage() {
                 <span className="rounded-full bg-warning-bg px-2.5 py-1 text-xs font-bold text-warning-tx">
                   AI draft — review required
                 </span>
-                <p className="mt-3 text-sm leading-relaxed whitespace-pre-wrap">{draft}</p>
+                <p className="mt-3 text-sm leading-relaxed break-words whitespace-pre-wrap">{draft}</p>
               </article>
             )}
           </section>

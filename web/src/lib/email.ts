@@ -1,10 +1,11 @@
-// Central email sender. Priority: Gmail SMTP (free, reaches any inbox,
-// no domain needed) → Resend (needs verified domain for non-owner mail)
-// → dev log (no provider). Secrets stay server-side.
+// Central email sender. Priority: ZeptoMail SMTP (transactional-grade,
+// primary once its domain verifies) → Gmail SMTP (free, reaches any inbox,
+// no domain needed) → Resend (verified domain reaches all; test sender
+// reaches the owner only) → dev log (no provider). Secrets stay server-side.
 //
 // Serverless note (Netlify Functions): SMTP can be slow/blocked from cloud
-// IPs, so Gmail sends carry tight timeouts and every outcome is logged with
-// an actionable tag: [email] Gmail skipped (no creds) vs failed (reason).
+// IPs, so sends carry tight timeouts and every outcome is logged with an
+// actionable tag: skipped (no creds) vs failed (reason).
 
 import nodemailer from "nodemailer";
 
@@ -13,6 +14,34 @@ export type ProviderStatus = {
   ok: boolean;
   detail: string;
 };
+
+async function sendViaZepto(opts: { to: string; subject: string; html: string; text?: string }) {
+  const token = (process.env.ZEPTO_SMTP_TOKEN ?? "").replace(/ /g, "");
+  const fromAddr = process.env.ZEPTO_FROM ?? "";
+  if (!token || !fromAddr) {
+    console.log("[email] ZeptoMail skipped (ZEPTO_SMTP_TOKEN / ZEPTO_FROM not set).");
+    return false;
+  }
+  // ZeptoMail SMTP: 587 + STARTTLS recommended; username is always emailapikey.
+  const transport = nodemailer.createTransport({
+    host: "smtp.zeptomail.com",
+    port: 587,
+    secure: false,
+    requireTLS: true,
+    auth: { user: "emailapikey", pass: token },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+  });
+  await transport.sendMail({
+    from: `EduFarm <${fromAddr}>`,
+    to: opts.to,
+    subject: opts.subject,
+    html: opts.html,
+    text: opts.text,
+  });
+  return true;
+}
 
 async function sendViaGmail(opts: { to: string; subject: string; html: string; text?: string }) {
   const user = process.env.GMAIL_USER;

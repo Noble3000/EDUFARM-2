@@ -138,7 +138,7 @@ export default function DiscussionsPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8">
       <div className="mx-auto max-w-4xl rounded-3xl bg-white p-4 sm:p-6">
-        <header className="flex h-14 items-center gap-4 rounded-2xl bg-edufarm-900 px-4 text-white">
+        <header className="flex min-h-14 flex-wrap items-center gap-2 rounded-2xl bg-edufarm-900 px-3 py-2 text-white sm:gap-4 sm:px-4">
           <Link href="/dashboard" className="font-display text-lg font-bold">EduFarm</Link>
           <span className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-edufarm-800">
             Discussion & Feedback
@@ -219,13 +219,13 @@ export default function DiscussionsPage() {
                         <li className="text-[13px] text-ink-600">No replies yet.</li>
                       )}
                     </ul>
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <input
                         value={drafts[t.id] ?? ""}
                         onChange={(e) => setDrafts((d) => ({ ...d, [t.id]: e.target.value }))}
                         placeholder="Write a reply…"
                         aria-label="Reply text"
-                        className="h-10 flex-1 rounded-xl border border-line px-3 text-sm"
+                        className="h-10 min-w-0 flex-1 basis-40 rounded-xl border border-line px-3 text-sm"
                       />
                       <button onClick={() => reply(t.id)}
                         className="h-10 rounded-xl bg-edufarm-800 px-4 text-sm font-semibold text-white">

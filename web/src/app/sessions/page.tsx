@@ -71,7 +71,7 @@ export default function SessionsPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8">
       <div className="mx-auto max-w-6xl rounded-3xl bg-white p-4 sm:p-6">
-        <header className="flex h-14 items-center gap-4 rounded-2xl bg-edufarm-900 px-4 text-white">
+        <header className="flex min-h-14 flex-wrap items-center gap-2 rounded-2xl bg-edufarm-900 px-3 py-2 text-white sm:gap-4 sm:px-4">
           <Link href="/dashboard" className="font-display text-lg font-bold">EduFarm</Link>
           <span className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-edufarm-800">
             Live Sessions
@@ -83,7 +83,7 @@ export default function SessionsPage() {
             <h2 className="font-display text-lg font-semibold">Schedule a session</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               <select value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value })}
-                required aria-label="Course" className="h-11 rounded-xl border border-line px-4 text-sm">
+                required aria-label="Course" className="h-11 w-full min-w-0 rounded-xl border border-line px-4 text-sm">
                 <option value="">Pick a course…</option>
                 {courses.map((c) => (
                   <option key={c.id} value={c.id}>{c.code} — {c.title}</option>
@@ -91,13 +91,13 @@ export default function SessionsPage() {
               </select>
               <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
                 required placeholder="Title (e.g. Week 5 review)" aria-label="Title"
-                className="h-11 rounded-xl border border-line px-4 text-sm" />
+                className="h-11 w-full min-w-0 rounded-xl border border-line px-4 text-sm" />
               <input value={form.meetingUrl} onChange={(e) => setForm({ ...form, meetingUrl: e.target.value })}
                 required inputMode="url" placeholder="https://meet.google.com/…"
-                aria-label="Meeting link" className="h-11 rounded-xl border border-line px-4 text-sm" />
+                aria-label="Meeting link" className="h-11 w-full min-w-0 rounded-xl border border-line px-4 text-sm" />
               <input type="datetime-local" value={form.startsAt}
                 onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
-                required aria-label="Start time" className="h-11 rounded-xl border border-line px-4 text-sm" />
+                required aria-label="Start time" className="h-11 w-full min-w-0 rounded-xl border border-line px-4 text-sm" />
             </div>
             <input value={form.instructions} onChange={(e) => setForm({ ...form, instructions: e.target.value })}
               placeholder="Joining instructions (optional)" aria-label="Instructions"
@@ -134,18 +134,21 @@ export default function SessionsPage() {
                     {groups[g].map(({ session: s, course: c, host: h, state: st }) => (
                       <li
                         key={s.id}
-                        className="flex items-center gap-3 rounded-xl border border-line p-3"
+                        className="flex flex-col gap-3 rounded-xl border border-line p-3 sm:flex-row sm:items-center"
                         style={st === "past" ? { opacity: 0.6 } : undefined}
                       >
-                        <div>
-                          <div className="text-sm font-semibold">{s.title}</div>
-                          <div className="text-xs text-ink-600">
-                            {c.code} · Hosted by {h.name} · <span className="tabular">{new Date(s.startsAt).toLocaleString()}</span>
-                            {s.instructions ? ` · ${s.instructions}` : ""}
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold break-words">{s.title}</div>
+                          <div className="mt-0.5 text-xs text-ink-600 break-words">
+                            <span className="font-medium">{c.code}</span> · Hosted by {h.name}
+                          </div>
+                          <div className="mt-0.5 text-xs text-ink-600 break-words">
+                            <span className="tabular">{new Date(s.startsAt).toLocaleString()}</span>
+                            {s.instructions ? <span> · {s.instructions}</span> : null}
                           </div>
                         </div>
                         {st === "past" ? (
-                          <span className="ml-auto rounded-full bg-appwash px-2.5 py-1 text-xs font-semibold text-ink-600">
+                          <span className="shrink-0 self-start rounded-full bg-appwash px-2.5 py-1 text-xs font-semibold text-ink-600 sm:self-auto">
                             Past
                           </span>
                         ) : (
@@ -153,7 +156,7 @@ export default function SessionsPage() {
                             href={s.meetingUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="ml-auto rounded-xl bg-edufarm-800 px-4 py-2 text-sm font-semibold text-white"
+                            className="w-full shrink-0 rounded-xl bg-edufarm-800 px-4 py-2 text-center text-sm font-semibold text-white sm:w-auto"
                           >
                             Join
                           </a>

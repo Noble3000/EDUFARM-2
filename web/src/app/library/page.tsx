@@ -170,7 +170,7 @@ export default function LibraryPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8">
       <div className="mx-auto max-w-6xl rounded-3xl bg-white p-4 sm:p-6">
-        <header className="flex h-14 items-center gap-4 rounded-2xl bg-edufarm-900 px-4 text-white">
+        <header className="flex min-h-14 flex-wrap items-center gap-2 rounded-2xl bg-edufarm-900 px-3 py-2 text-white sm:gap-4 sm:px-4">
           <Link href="/dashboard" className="font-display text-lg font-bold">EduFarm</Link>
           <span className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-edufarm-800">
             Library
@@ -259,8 +259,8 @@ export default function LibraryPage() {
             ) : (
               <ul className="mt-3 space-y-2">
                 {mine.map(({ material: m, course: c }) => (
-                  <li key={m.id} className="flex items-center gap-3 rounded-xl border border-line p-3">
-                    <div>
+                  <li key={m.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-line p-3">
+                    <div className="min-w-0 flex-1">
                       <div className="text-sm font-semibold">{m.title}</div>
                       <div className="text-xs text-ink-600">{c.code} · {c.title} · {m.type}</div>
                     </div>
@@ -304,8 +304,8 @@ export default function LibraryPage() {
           )}
           <ul className="mt-3 space-y-2">
             {rows.map(({ material: m, course: c }) => (
-              <li key={m.id} className="flex items-center gap-3 rounded-xl border border-line p-3">
-                <div>
+              <li key={m.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-line p-3">
+                <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold">{m.title}</div>
                   <div className="text-xs text-ink-600">
                     {c.code} · {c.title} · {m.type}

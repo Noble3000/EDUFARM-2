@@ -57,8 +57,8 @@ export default function VerificationQueue() {
       <ul className="mt-4 space-y-3">
         {shown.map(({ app, applicant, evidenceUrls }) => (
           <li key={app.id} className="rounded-2xl border border-line p-4">
-            <div className="text-sm font-bold">{applicant.name}</div>
-            <div className="text-xs text-ink-600">
+            <div className="text-sm font-bold break-words">{applicant.name}</div>
+            <div className="text-xs break-all text-ink-600">
               {applicant.email} · {app.department ?? "no department"} ·{" "}
               <span className="tabular">{new Date(app.createdAt).toLocaleString()}</span>
             </div>

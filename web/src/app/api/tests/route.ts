@@ -27,7 +27,8 @@ export async function GET() {
     return NextResponse.json({
       tests: rows.map((r) => ({ ...r, myStatus: byTest.get(r.test.id) ?? "not-started" })),
     });
-  } catch {
+  } catch (e) {
+    console.error("[tests GET] failed:", e);
     return NextResponse.json({ tests: [], error: "unavailable" }, { status: 503 });
   }
 }
@@ -57,8 +58,33 @@ export async function POST(req: Request) {
     }
     for (const [i, q] of qs.entries()) {
       if (!q.prompt?.trim()) return NextResponse.json({ error: `Question ${i + 1} needs a prompt.` }, { status: 400 });
-      if (q.kind === "mcq" && (!q.options || q.options.filter((o) => o.trim()).length < 2)) {
-        return NextResponse.json({ error: `MCQ ${i + 1} needs at least 2 options.` }, { status: 400 });
+      if (q.kind === "mcq") {
+        const opts = (q.options ?? []).map((o) => (o ?? "").trim());
+        if (opts.filter(Boolean).length < 2) {
+          return NextResponse.json({ error: `MCQ ${i + 1} needs at least 2 options.` }, { status: 400 });
+        }
+        const idx = q.answerIndex ?? 0;
+        if (!Number.isInteger(idx) || idx < 0 || idx >= q.options!.length) {
+          return NextResponse.json({ error: `MCQ ${i + 1} has an invalid correct answer.` }, { status: 400 });
+        }
+      }
+    }
+
+    // Validate optional fields before touching the DB so bad input is a 400,
+    // never a masked 503 "unavailable".
+    let duration: number | null = null;
+    if (durationMin !== undefined && durationMin !== null && String(durationMin).trim() !== "") {
+      duration = Number(durationMin);
+      if (!Number.isFinite(duration) || duration <= 0) {
+        return NextResponse.json({ error: "Minutes must be a positive number (or left empty)." }, { status: 400 });
+      }
+      duration = Math.floor(duration);
+    }
+    let due: Date | null = null;
+    if (dueAt !== undefined && dueAt !== null && String(dueAt).trim() !== "") {
+      due = new Date(dueAt);
+      if (Number.isNaN(due.getTime())) {
+        return NextResponse.json({ error: "Due date is not a valid date." }, { status: 400 });
       }
     }
 
@@ -74,8 +100,8 @@ export async function POST(req: Request) {
       authorId: user.id,
       title: title.trim(),
       instructions: instructions?.trim() || null,
-      durationMin: durationMin ? Number(durationMin) : null,
-      dueAt: dueAt ? new Date(dueAt) : null,
+      durationMin: duration,
+      dueAt: due,
     });
     await db.insert(testQuestions).values(
       qs.map((q, i) => ({
@@ -83,7 +109,7 @@ export async function POST(req: Request) {
         testId: id,
         kind: q.kind === "short" ? "short" : "mcq",
         prompt: q.prompt.trim(),
-        options: q.kind === "short" ? [] : q.options!.map((o) => o.trim()),
+        options: q.kind === "short" ? [] : q.options!.map((o) => (o ?? "").trim()),
         answerIndex: q.kind === "mcq" ? (q.answerIndex ?? 0) : null,
         answerText: q.kind === "short" ? q.answerText?.trim() || null : null,
         marks: q.marks && q.marks > 0 ? Math.floor(q.marks) : 1,
@@ -91,7 +117,11 @@ export async function POST(req: Request) {
       })),
     );
     return NextResponse.json({ id }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "unavailable" }, { status: 503 });
+  } catch (e) {
+    console.error("[tests POST] failed:", e);
+    return NextResponse.json(
+      { error: "Could not save the test — database not reachable. Try again in a moment." },
+      { status: 503 },
+    );
   }
 }

@@ -93,7 +93,7 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8">
       <div className="mx-auto max-w-6xl rounded-3xl bg-white p-4 sm:p-6">
-        <header className="flex h-14 items-center gap-4 rounded-2xl bg-edufarm-900 px-4 text-white">
+        <header className="flex min-h-14 flex-wrap items-center gap-2 rounded-2xl bg-edufarm-900 px-3 py-2 text-white sm:gap-4 sm:px-4">
           <Link href="/dashboard" className="font-display text-lg font-bold">EduFarm</Link>
           <span className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-edufarm-800">
             My Courses
@@ -107,7 +107,7 @@ export default function CoursesPage() {
               Enter your courses manually — code, title, lecturer, units, session.
             </p>
             <form onSubmit={add} className="mt-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label htmlFor="code" className="text-sm font-semibold">Course code</label>
                   <input id="code" required value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })}
@@ -125,7 +125,7 @@ export default function CoursesPage() {
                 <input id="title" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="Human Anatomy II" className="mt-1 h-11 w-full rounded-xl border border-line px-4 text-sm" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label htmlFor="lecturer" className="text-sm font-semibold">Lecturer</label>
                   <input id="lecturer" value={form.lecturerName}

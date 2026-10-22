@@ -157,8 +157,8 @@ export function CourseDetail({ params }: { params: Promise<{ id: string }> }) {
           ) : (
             <ul className="space-y-2">
               {data.materials.map((m) => (
-                <li key={m.id} className="flex items-center gap-3 rounded-xl border border-line p-3">
-                  <span className="text-sm font-semibold">{m.title}</span>
+                <li key={m.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-line p-3">
+                  <span className="text-sm font-semibold break-words">{m.title}</span>
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                     m.status === "published" ? "bg-success-bg text-success-tx" : "bg-warning-bg text-warning-tx"
                   }`}>
@@ -221,8 +221,8 @@ export function CourseDetail({ params }: { params: Promise<{ id: string }> }) {
           ) : (
             <ul className="space-y-2">
               {data.sessions.map((s) => (
-                <li key={s.id} className="flex items-center gap-3 rounded-xl border border-line p-3">
-                  <div>
+                <li key={s.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-line p-3">
+                  <div className="min-w-0 flex-1">
                     <div className="text-sm font-semibold">{s.title}</div>
                     <div className="tabular text-xs text-ink-600">
                       {new Date(s.startsAt).toLocaleString()}

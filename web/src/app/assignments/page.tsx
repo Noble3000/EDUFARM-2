@@ -74,7 +74,7 @@ export default function AssignmentsPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8">
       <div className="mx-auto max-w-4xl rounded-3xl bg-white p-4 sm:p-6">
-        <header className="flex h-14 items-center gap-4 rounded-2xl bg-edufarm-900 px-4 text-white">
+        <header className="flex min-h-14 flex-wrap items-center gap-2 rounded-2xl bg-edufarm-900 px-3 py-2 text-white sm:gap-4 sm:px-4">
           <Link href="/dashboard" className="font-display text-lg font-bold">EduFarm</Link>
           <span className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-edufarm-800">
             Assignments
@@ -129,9 +129,9 @@ export default function AssignmentsPage() {
               <li key={a.id}>
                 <Link
                   href={`/assignments/${a.id}`}
-                  className="flex items-center gap-3 rounded-2xl border border-line p-4 hover:border-edufarm-700 hover:bg-edufarm-050"
+                  className="flex flex-wrap items-center gap-3 rounded-2xl border border-line p-4 hover:border-edufarm-700 hover:bg-edufarm-050"
                 >
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="text-sm font-bold">{a.title}</div>
                     <div className="mt-0.5 text-xs text-ink-600">
                       {c.code} · {a.dueAt ? (

@@ -8,9 +8,17 @@ export async function GET() {
   try {
     const user = await getSessionUser();
     if (!user) return NextResponse.json({ courses: [] }, { status: 401 });
-    if (user.role === "lecturer" || user.role === "admin") {
+    if (user.role === "admin") {
       const all = await db.select().from(courses);
       return NextResponse.json({ courses: all });
+    }
+    if (user.role === "lecturer") {
+      // Each lecturer only sees (and can pick) the courses they created.
+      const mine = await db
+        .select()
+        .from(courses)
+        .where(eq(courses.createdBy, user.id));
+      return NextResponse.json({ courses: mine });
     }
     const rows = await db
       .select({ course: courses })
