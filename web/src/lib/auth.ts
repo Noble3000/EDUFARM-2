@@ -11,6 +11,7 @@ export const auth = betterAuth({
   // BETTER_AUTH_URL on the host must exactly match the live site URL.
   trustedOrigins: [
     process.env.BETTER_AUTH_URL,
+    "https://edufarm-2.vercel.app",
     "https://edufarm-app.netlify.app",
     "http://localhost:3000",
   ].filter((v): v is string => !!v),
