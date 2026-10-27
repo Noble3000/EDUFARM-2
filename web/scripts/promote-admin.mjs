@@ -3,12 +3,10 @@
 // before an account has been registered.
 import postgres from "postgres";
 
-// The canonical owner address first; the alternate covers the account that
-// was actually registered. Any of these that exist get promoted.
-const OWNER_EMAILS = [
-  "nobleonwuka30@gmail.com",
-  "nobleonwuka20@gmail.com",
-];
+// Canonical owner address. The account was first registered under a mistyped
+// address (nobleonwuka20@) and later corrected to this one, which is the only
+// address that should be auto-promoted.
+const OWNER_EMAILS = ["nobleonwuka30@gmail.com"];
 if (process.env.ADMIN_EMAIL) OWNER_EMAILS.unshift(process.env.ADMIN_EMAIL.trim());
 const owners = [...new Set(OWNER_EMAILS.map((e) => e.toLowerCase()))];
 
