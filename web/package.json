@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "npm run db:migrate && node scripts/promote-admin.mjs && next build",
+    "vercel-build": "npm run db:migrate && node scripts/promote-admin.mjs && node scripts/prod-smoke.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",

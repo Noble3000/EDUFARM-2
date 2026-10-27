@@ -7,6 +7,9 @@ import postgres from "postgres";
 // address (nobleonwuka20@) and later corrected to this one, which is the only
 // address that should be auto-promoted.
 const OWNER_EMAILS = ["nobleonwuka30@gmail.com"];
+// Accounts that must never hold admin. The first registration used a mistyped
+// address before it was corrected to the canonical one.
+const RETIRED_EMAILS = ["nobleonwuka20@gmail.com"];
 if (process.env.ADMIN_EMAIL) OWNER_EMAILS.unshift(process.env.ADMIN_EMAIL.trim());
 const owners = [...new Set(OWNER_EMAILS.map((e) => e.toLowerCase()))];
 
@@ -34,6 +37,20 @@ try {
       console.log(`[admin] promoted ${rows[0].email} to admin.`);
     } else {
       console.log(`[admin] ${email} is not registered; nothing to promote.`);
+    }
+  }
+
+  for (const email of RETIRED_EMAILS.map((e) => e.toLowerCase())) {
+    const rows = await sql`
+      update "user"
+         set role = 'student',
+             updated_at = now()
+       where lower(email) = ${email}
+         and role = 'admin'
+       returning email
+    `;
+    if (rows.length) {
+      console.log(`[admin] demoted ${rows[0].email} to student.`);
     }
   }
 
