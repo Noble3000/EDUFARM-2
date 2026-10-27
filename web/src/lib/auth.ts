@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { emailOTP } from "better-auth/plugins";
 import { db } from "./db";
 import { sendVerificationCodeEmail } from "./email";
+import { sendPasswordResetEmail } from "./email-templates";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -20,22 +21,20 @@ export const auth = betterAuth({
     requireEmailVerification: true,
     // University-domain allowlist ships in Phase 3 (needs domain decision).
     sendResetPassword: async ({ user, url }) => {
-      // Dev fallback: log the link. Set RESEND_API_KEY + wire delivery for prod.
-      console.log(`[auth] reset ${user.email}: ${url}`);
+      await sendPasswordResetEmail(user.email, url);
     },
   },
   emailVerification: {
+    // IMPORTANT: do NOT define sendVerificationEmail here.
+    //
+    // The emailOTP plugin (overrideDefaultEmailVerification) installs its own
+    // handler that generates the 6-digit code, stores it, and sends it inside
+    // the sign-up request. better-auth merges plugin options with `defu`,
+    // where the app's own config wins — so a handler defined here silently
+    // replaced the plugin's sender. Sign-up then created the account but sent
+    // no code, which is why users had to tap "Resend" before any mail arrived.
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
-    // Dev: verification links log to console until RESEND_API_KEY is set (Phase 3).
-    sendVerificationEmail: async ({ user, url }) => {
-      if (!process.env.RESEND_API_KEY) {
-        console.log(`[auth] verify ${user.email}: ${url}`);
-        return;
-      }
-      // Phase 3 wires Resend/Postmark delivery here.
-      console.log(`[auth] verify ${user.email}: ${url}`);
-    },
   },
   user: {
     additionalFields: {
@@ -53,16 +52,13 @@ export const auth = betterAuth({
       // of the new address with a 6-digit code.
       changeEmail: { enabled: true },
       async sendVerificationOTP({ email, otp, type }) {
-        // Dev: code is visible in the server terminal so signup works
+        // Dev: the code also lands in the server terminal so signup works
         // without an email provider. Prod: delivered by the email chain.
         if (!process.env.RESEND_API_KEY) {
           console.log(`[auth] OTP for ${email} (${type}): ${otp}`);
         }
-        if (type === "email-verification" || type === "change-email") {
-          await sendVerificationCodeEmail(email, otp);
-        } else {
-          console.log(`[auth] OTP for ${email} (${type}): ${otp}`);
-        }
+        // Every OTP type is delivered — including password reset codes.
+        await sendVerificationCodeEmail(email, otp);
       },
     }),
   ],

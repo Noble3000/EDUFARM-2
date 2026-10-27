@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -22,6 +22,15 @@ export default function LecturerRegisterPage() {
   const [emailTaken, setEmailTaken] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // The code is emailed during sign-up itself, so "Resend" is only a fallback.
+  const [resendReady, setResendReady] = useState(false);
+
+  useEffect(() => {
+    if (step !== "code") return;
+    setResendReady(false);
+    const timer = window.setTimeout(() => setResendReady(true), 20000);
+    return () => window.clearTimeout(timer);
+  }, [step]);
 
   async function createAccount(e: React.FormEvent) {
     e.preventDefault();
@@ -37,8 +46,9 @@ export default function LecturerRegisterPage() {
         setEmailTaken(friendly.emailInUse);
         return;
       }
+      // The verification code is sent by the server inside this sign-up call.
       setStep("code");
-      setInfo(`We sent a 6-digit code to ${email}. Enter it below — you will be logged in immediately, then upload evidence.`);
+      setInfo(`We sent a 6-digit code to ${email}. It usually arrives within a few seconds — check spam if you don't see it.`);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -173,8 +183,9 @@ export default function LecturerRegisterPage() {
         <div className="mx-auto max-w-md rounded-3xl bg-white p-6 shadow-[0_8px_30px_rgba(11,77,46,0.12)] sm:p-8">
           <h1 className="font-display text-2xl font-bold">Enter your code</h1>
           <p className="mt-1 text-sm text-ink-600">
-            6-digit code sent to <strong>{email}</strong>. Valid for 10 minutes.
-            You will be logged in immediately, then upload evidence (step 3).
+            A 6-digit code is on its way to <strong>{email}</strong>. It is
+            valid for 10 minutes. You will be logged in immediately, then upload
+            evidence (step 3).
           </p>
           <form onSubmit={verifyCode} className="mt-6 space-y-4">
             <div>
@@ -195,10 +206,17 @@ export default function LecturerRegisterPage() {
               className="h-11 w-full rounded-xl bg-ink-900 text-sm font-bold text-white disabled:opacity-50">
               {busy ? "Verifying…" : "Verify & continue →"}
             </button>
-            <button type="button" onClick={onResend} disabled={busy}
-              className="h-11 w-full rounded-xl border border-line text-sm font-bold text-ink-900 disabled:opacity-50">
-              Resend code
-            </button>
+            {/* Resend is a fallback only: the code was emailed during sign-up. */}
+            {resendReady ? (
+              <button type="button" onClick={onResend} disabled={busy}
+                className="h-11 w-full rounded-xl border border-line text-sm font-bold text-ink-900 disabled:opacity-50">
+                {busy ? "Sending…" : "Still no email? Send a new code"}
+              </button>
+            ) : (
+              <p className="text-center text-xs text-ink-400">
+                No email yet? A resend option appears in a few seconds.
+              </p>
+            )}
           </form>
         </div>
       </div>
