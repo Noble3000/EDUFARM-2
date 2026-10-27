@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { InstallButton } from "@/components/pwa";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LiveDevotional } from "../devotional";
 
 type Me = {
   id: string;
@@ -237,6 +238,9 @@ export default function DashboardPage() {
               : "Academic activity first: deadlines, assignments needing action, announcements, recent course activity."}
           </p>
         </section>
+
+        {/* Word of God — shown on every dashboard (student, lecturer, admin) */}
+        <LiveDevotional compact className="mt-4" />
 
         {(me?.role === "lecturer" || me?.role === "admin") && (
           <section className="mt-4 rounded-2xl border border-line p-5" aria-label="Teaching shortcuts">
