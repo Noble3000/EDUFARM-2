@@ -43,8 +43,9 @@ function paragraphs(text?: string | null) {
 /**
  * Older entries typed the prayer into the message under a
  * "Prayer / Confession" heading. Lift it out so it shows in its own block.
+ * Exported so the admin form can prefill the prayer column when editing.
  */
-function splitLegacyPrayer(body: string, prayer?: string | null) {
+export function extractPrayer(body: string, prayer?: string | null) {
   const explicit = prayer?.trim();
   if (explicit) return { body: body.trim(), prayer: explicit };
 
@@ -103,7 +104,7 @@ export function DevotionalView({
 }) {
   const [expanded, setExpanded] = useState(false);
 
-  const message = splitLegacyPrayer(content.body, content.prayer);
+  const message = extractPrayer(content.body, content.prayer);
   const { verse, body } = splitVerse(message.body, content.verseRef);
   const bodyParagraphs = paragraphs(body);
   const prayerParagraphs = paragraphs(message.prayer);

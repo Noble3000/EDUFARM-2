@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AdminShell } from "../admin-shell";
-import { DevotionalView, formatDevotionalDate } from "../../devotional";
+import { DevotionalView, extractPrayer, formatDevotionalDate } from "../../devotional";
 
 type D = {
   id: string;
@@ -44,11 +44,13 @@ export default function DevotionalsAdmin() {
   }
 
   function startEdit(d: D) {
+    // Legacy rows kept the prayer inside the body — move it into its column.
+    const split = extractPrayer(d.body, d.prayer);
     setEditingId(d.id);
     setTitle(d.title);
     setVerseRef(d.verseRef ?? "");
-    setBody(d.body);
-    setPrayer(d.prayer ?? "");
+    setBody(split.body);
+    setPrayer(split.prayer ?? "");
     setNotice(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
