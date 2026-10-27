@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   if (gate.error || !("user" in gate)) return gate.error;
   const admin = (gate as { user: { id: string } }).user;
   try {
-    const { title, verseRef, body, publishAt, showOnLanding } = (await req.json()) ?? {};
+    const { title, verseRef, body, prayer, publishAt, showOnLanding } = (await req.json()) ?? {};
     if (!title?.trim() || !body?.trim()) {
       return NextResponse.json({ error: "Title and body are required." }, { status: 400 });
     }
@@ -31,6 +31,7 @@ export async function POST(req: Request) {
       title: title.trim(),
       verseRef: verseRef?.trim() || null,
       body: body.trim(),
+      prayer: prayer?.trim() || null,
       status,
       publishAt: publishAt ? new Date(publishAt) : null,
       showOnLanding: showOnLanding ?? true,
@@ -46,7 +47,7 @@ export async function PATCH(req: Request) {
   const gate = await requireAdmin();
   if (gate.error) return gate.error;
   try {
-    const { id, action, title, verseRef, body, publishAt, showOnLanding } = (await req.json()) ?? {};
+    const { id, action, title, verseRef, body, prayer, publishAt, showOnLanding } = (await req.json()) ?? {};
     if (!id) return NextResponse.json({ error: "id is required." }, { status: 400 });
 
     if (action === "publish") {
@@ -72,6 +73,7 @@ export async function PATCH(req: Request) {
           ...(title !== undefined ? { title: title.trim() } : {}),
           ...(verseRef !== undefined ? { verseRef: verseRef.trim() || null } : {}),
           ...(body !== undefined ? { body: body.trim() } : {}),
+          ...(prayer !== undefined ? { prayer: prayer.trim() || null } : {}),
           ...(publishAt !== undefined ? { publishAt: publishAt ? new Date(publishAt) : null } : {}),
           ...(showOnLanding !== undefined ? { showOnLanding } : {}),
           updatedAt: new Date(),

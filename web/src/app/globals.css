@@ -95,6 +95,14 @@ h3 {
   font-variant-numeric: tabular-nums;
 }
 
+/* Devotional: fade the tail of a collapsed message on the dashboard so the
+   card never buries academic activity. Mask (not a colour overlay) keeps it
+   correct in both light and dark themes. */
+.devotional-fade {
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+}
+
 /* ---------- Dark theme ----------
    Overriding the @theme CSS variables recolours every token-based utility
    (bg-appwash, text-ink-*, border-line, …). Literal `bg-white` card surfaces

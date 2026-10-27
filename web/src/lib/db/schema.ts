@@ -258,8 +258,11 @@ export const reports = pgTable("reports", {
 export const devotionals = pgTable("devotionals", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
+  // Bible text with its reference, shown before the message body.
   verseRef: text("verse_ref"),
   body: text("body").notNull(),
+  // Prayer / confession — its own admin-authored block below the body.
+  prayer: text("prayer"),
   coverPath: text("cover_path"), // R2 key
   status: text("status").notNull().default("draft"), // draft | scheduled | published | hidden
   publishAt: timestamp("publish_at"),
