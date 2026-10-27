@@ -63,39 +63,16 @@ try {
   userId = found[0]?.id ?? null;
   check("account persisted to Postgres", !!userId, userId ?? "not found");
 
-  // 2) The 6-digit code is generated in a background task right after signup,
-  //    so poll for it before giving up (identifier = "<type>-otp-<email>").
-  const readOtp = async () => {
-    const rows = await sql`
-      select identifier, value from verification
-       where identifier like ${"%" + email + "%"}
-       order by created_at desc limit 1
-    `;
-    const row = rows[0];
-    if (!row) return "";
-    return String(row.value).split(":")[0].trim();
-  };
-
-  let otp = "";
-  for (let i = 0; i < 25 && !otp; i += 1) {
-    otp = await readOtp();
-    if (!otp) await new Promise((r) => setTimeout(r, 600));
-  }
-
-  // Fallback: ask the API to re-issue a code, then poll again.
-  if (!otp) {
-    await api("/api/auth/email-otp/send-verification-otp", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, type: "email-verification" }),
-    });
-    for (let i = 0; i < 20 && !otp; i += 1) {
-      otp = await readOtp();
-      if (!otp) await new Promise((r) => setTimeout(r, 600));
-    }
-  }
-
-  check("verification code issued", /^\d{6}$/.test(otp), otp ? "6-digit code stored" : "no code found");
+  // 2) The code must be created DURING sign-up (no resend tap).
+  //    This is the regression guard for the bug where our own
+  //    emailVerification handler replaced the emailOTP sender.
+  const rows = await sql`
+    select identifier, value from verification
+     where identifier like ${"%" + email + "%"}
+     order by created_at desc limit 1
+  `;
+  const otp = String(rows[0]?.value ?? "").split(":")[0].trim();
+  check("code issued during sign-up (no resend)", /^\d{6}$/.test(otp), otp ? "6-digit code stored" : "no code found");
 
   // 3) Verify the address with the code (the same call the register page makes).
   res = await api("/api/auth/email-otp/verify-email", {

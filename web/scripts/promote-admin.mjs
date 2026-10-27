@@ -14,7 +14,6 @@ if (process.env.ADMIN_EMAIL) OWNER_EMAILS.unshift(process.env.ADMIN_EMAIL.trim()
 const owners = [...new Set(OWNER_EMAILS.map((e) => e.toLowerCase()))];
 
 const url = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
-
 if (!url) {
   console.log("[admin] DATABASE_URL is not set; skipping admin promotion.");
   process.exit(0);
@@ -60,6 +59,19 @@ try {
   console.log(
     `[admin] current admins (${admins.length}): ${admins.map((a) => a.email).join(", ") || "none"}`,
   );
+
+  // Test accounts created by scripts/prod-smoke.mjs or one-off delivery checks
+  // must never linger in production. Exact patterns only — no real user match.
+  const junk = await sql`
+    delete from "user"
+     where email like 'prod-smoke-%@example.com'
+        or email like 'ef-test-%@maxxspace.com'
+        or email = 'nobleonwuka30+edufarmtest@gmail.com'
+     returning email
+  `;
+  if (junk.length) {
+    console.log(`[admin] removed ${junk.length} test account(s): ${junk.map((r) => r.email).join(", ")}`);
+  }
 } finally {
   await sql.end();
 }
